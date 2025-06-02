@@ -141,21 +141,41 @@ if 1=1 then
         chKdEmployee varchar(255),chNamaEmployee varchar(255)
     ) on commit preserve rows;
 
-    perform insert into employee
-    select a.da_key,a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
-    inkddepo,chketdepo,chjabatan,chkdsite,
-    case
-        when vtipeperiode = 1 then 1
-        when vtipeperiode = 2 then 2
-        when vtipeperiode = 3 then 3
-    end inkdtype,
-    substring(chkdemployee,2),chNama chNamaEmployee
-    from lp_mda a
-    left join (
-        select chkdda,chjabatan,chNama from PPI_mInsDALoad
-    ) b on a.chkdda = b.chkdda
-    where chjabatan = 'AE'
-    ;
+    if vposisi in (0,1) then
+        perform insert into employee
+        select a.da_key,a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
+        inkddepo,chketdepo,chjabatan,chkdsite,
+        case
+            when vtipeperiode = 1 then 1
+            when vtipeperiode = 2 then 2
+            when vtipeperiode = 3 then 3
+        end inkdtype,
+        substring(chkdemployee,2),chNama chNamaEmployee
+        from lp_mda a
+        left join (
+            select chkdda,chjabatan,chNama from PPI_mInsDALoad
+        ) b on a.chkdda = b.chkdda
+        where chjabatan = 'AE'
+        ;
+    end if;
+
+    if vposisi in (2) then
+        perform insert into employee
+        select a.da_key,a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
+        inkddepo,chketdepo,chjabatan,chkdsite,
+        case
+            when vtipeperiode = 1 then 1
+            when vtipeperiode = 2 then 2
+            when vtipeperiode = 3 then 3
+        end inkdtype,
+        substring(chkdemployee,2),chNama chNamaEmployee
+        from lp_mda_aarta a
+        left join (
+            select chkdda,chjabatan,chNama from PPI_mInsDALoad
+        ) b on a.chkdda = b.chkdda
+        where chjabatan = 'AE'
+        ;
+    end if;
 
     perform create local temporary table if not exists produkPPI
     (
@@ -181,28 +201,54 @@ if 1=1 then
         chkdemployee varchar(255),chkdda varchar(255),datglmulaitransaksi date
     ) on commit preserve rows;
 
-    perform insert into customer
-    select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-    chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
-    from lp_mcustomer cust
-    inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
-    where cust.inkdwilayah in (select wil from wilayah)
-    ;
+    if vposisi in (0,1) then
+        perform insert into customer
+        select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
+        chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
+        from lp_mcustomer cust
+        inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+        where cust.inkdwilayah in (select wil from wilayah)
+        ;
+    end if;
+
+    if vposisi in (2) then
+        perform insert into customer
+        select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
+        chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
+        from lp_mcustomer_aarta cust
+        inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+        where cust.inkdwilayah in (select wil from wilayah)
+        ;
+    end if;
+
+    /*
+     ** Tipe Omset Classification (tipeoms) **
+     ** 0: insentif achieve sales vs target per produk aturan May 2025 - 001
+     ** continue here...
+     */
 
     perform create local temporary table if not exists prelistlt
     (
-        tipeoms int,inkdwilayah int,chkdsite varchar(255),deqtynetto dec(25,6),derpnetto dec(25,6),
-        intahun int,inbulan int,chkdemployee varchar(255),chkp varchar(255)
+        tipeoms int,inkdwilayah int,chkdsite varchar(255),deQtyNettoCurrent dec(25,6),deRpNettoCurrent dec(25,6),
+        targetQtyThnLalu dec(25,6),targetOmsThnLalu dec(25,6),chkdemployee varchar(255),chkp varchar(255)
     ) on commit preserve rows;
 
     perform insert into prelistlt
     select 0 tipeoms,inkdwilayah,chkdsite,
-    case when isnull(inkdkonvbesarid,0) = 0 then 0 else sum(tgtQtyThLalu/inkdkonvbesarid) end deqtynetto,
-    sum(tgtOmsThLalu) derpnetto,
-    intahun,inbulan,chkdemployee,chkp
+    case when isnull(inkdkonvbesarid,0) = 0 then 0 else sum(tgtQtyThLalu/inkdkonvbesarid) end tgtQtyThLalu,
+    sum(tgtOmsThLalu) tgtOmsThLalu,chkdemployee,chkp
     from (
-        select customer_key,product_key,intahun,inbulan,sum(deqtynetto/12.00) tgtQtyThLalu,sum(derpnetto/12.00) tgtOmsThLalu from dm_tjual_mon
-        group by customer_key,product_key,intahun,inbulan
+        select customer_key,product_key,sum(deqtynetto/12.00) tgtQtyThLalu,sum(derpnetto/12.00) tgtOmsThLalu
+        from dm_tjual_mon
+        where intahun = vtahunlalu
+        group by customer_key,product_key
+
+        union all
+
+        select customer_key,product_key,sum(deqtynetto),sum(derpnetto)
+        from dm_tjual_mon
+        where intahun = vtahun and inbulan = vbulan
+        group by customer_key,product_key
     ) a
     inner join (
         select product_key,inkdkonvbesarid,chkdbarang,chkp from produkPPI
@@ -211,9 +257,14 @@ if 1=1 then
         select customer_key,inkdwilayah,chkdsite,chkdemployee
         from customer
     ) c on a.customer_key = c.customer_key
-    where intahun = vtahun and inbulan = vbulan
-    group by inkdwilayah,chkdsite,inkdkonvbesarid,intahun,inbulan,chkdemployee,chkp
+    group by inkdwilayah,chkdsite,inkdkonvbesarid,chkdemployee,chkp
     ;
+
+--     perform create local temporary table if not exists tempinsomsetkp
+--     (
+--         inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),chkp varchar(255),
+--         a
+--     ) on commit preserve rows;
 
 end if;
 end;
