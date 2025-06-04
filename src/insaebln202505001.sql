@@ -357,32 +357,45 @@ if 1=1 then
     -- untuk mencari persentase per KP
     perform create local temporary table if not exists tempomsetkp
     (
-        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),
+        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
         deQtyNettoThLalu dec(25,6),deRpNettoThLalu dec(25,6),deQtyNettoCurr dec(25,6),deRpNettoCurr dec(25,6),
         percentQtyNetto dec(25,6),percentRpNetto dec(25,6)
     ) on commit preserve rows;
 
     perform insert into tempomsetkp
-    select inkdwilayah,chkdemployee,chkp,chkdcustomer
+    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
     isnull(deQtyNettoThLalu,0) qtyNettoThLalu,isnull(deRpNettoThLalu,0) rpNettoThLalu,isnull(deQtyNettoCurr,0) qtyNettoCurr,isnull(deRpNettoCurr,0) rpNettoCurr,
-    sum(case when qtyNettoThLalu <= 0 or qtyNettoCurr <= 0 then 0 else qtyNettoCurr/qtyNettoThLalu end) percentQtyNetto,
-    sum(case when rpNettoThLalu <= 0 or rpNettoCurr <= 0 then 0 else rpNettoCurr/rpNettoThLalu end) percentRpNetto
+    sum(case when (qtyNettoThLalu <= 0) or (qtyNettoCurr <= 0) then 0 else qtyNettoCurr/qtyNettoThLalu end) percentQtyNetto,
+    sum(case when (rpNettoThLalu <= 0) or (rpNettoCurr <= 0) then 0 else rpNettoCurr/rpNettoThLalu end) percentRpNetto
     from (
-        select inkdwilayah,chkdemployee,chkp,
+        select inkdwilayah,chkdemployee,chkp,chkdcustomer,
         sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
         sum(case when tipeoms in (0) then deRpNetto end) deRpNettoThLalu,
         sum(case when tipeoms in (2) then deQtyNetto end) deQtyNettoCurr,
         sum(case when tipeoms in (2) then deRpNetto end) deRpNettoCurr
         from prelistlt where tipeoms in (0,2)
-        group by inkdwilayah,chkdemployee,chkp
+        group by inkdwilayah,chkdemployee,chkdcustomer,chkp
     ) a
-    group by inkdwilayah,chkdemployee,chkp,deQtyNettoThLalu,deRpNettoThLalu,deQtyNettoCurr,deRpNettoCurr
+    group by inkdwilayah,chkdemployee,chkdcustomer,chkp,deQtyNettoThLalu,deRpNettoThLalu,deQtyNettoCurr,deRpNettoCurr
     ;
 
---     perform create local temporary table if not exists insomsetkp --> perhitungan untuk insentif omset kp
---     (
---         inkdwilayah
---     ) on commit preserve rows;
+    perform create local temporary table if not exists insomsetkp
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
+        tarifins dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insomsetkp
+    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+    case
+        when isnull(percentQtyNetto,0) < 0.80 then 0
+        when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpNettoCurr,0)
+        when isnull(percentQtyNetto,0) < 1 then 0.0035 * isnull(deRpNettoCurr,0)
+        when isnull(percentQtyNetto,0) >= 1 then 0.0060 * isnull(deRpNettoCurr,0)
+        else 0
+    end tarifins
+    from tempomsetkp
+    ;
 
 end if;
 end;
