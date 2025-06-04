@@ -397,6 +397,55 @@ if 1=1 then
     from tempomsetkp
     ;
 
+    perform create local temporary table if not exists tempomsetkpglobal
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),
+        deQtyNettoThLalu dec(25,6),deRpNettoThLalu dec(25,6),deQtyNettoCurr dec(25,6),deRpNettoCurr dec(25,6),
+        percentQtyNetto dec(25,6),percentRpNetto dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into tempomsetkpglobal
+    select inkdwilayah,chkdemployee,chkp,null,null,null,null,
+    sum(case when (deQtyNettoThLalu <= 0) or (deQtyNettoCurr <= 0) then 0 else deQtyNettoCurr/deQtyNettoThLalu end) percentQtyNetto,
+    sum(case when (deRpNettoThLalu <= 0) or (deRpNettoCurr <= 0) then 0 else deRpNettoCurr/deRpNettoThLalu end) percentRpNetto
+    from (
+        select inkdwilayah,chkdemployee,chkp,
+        sum(deQtyNettoThLalu) deQtyNettoThLalu,
+        sum(deRpNettoThLalu) deRpNettoThLalu,
+        sum(deQtyNettoCurr) deQtyNettoCurr,
+        sum(deRpNettoCurr) deRpNettoCurr
+        from (
+            select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+            sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
+            sum(case when tipeoms in (0) then deRpNetto end) deRpNettoThLalu,
+            sum(case when tipeoms in (2) then deQtyNetto end) deQtyNettoCurr,
+            sum(case when tipeoms in (2) then deRpNetto end) deRpNettoCurr
+            from prelistlt where tipeoms in (0,2)
+            group by inkdwilayah,chkdemployee,chkdcustomer,chkp
+        ) a
+        group by inkdwilayah,chkdemployee,chkp
+    ) a
+    group by inkdwilayah,chkdemployee,chkp
+    ;
+
+    perform create local temporary table if not exists insomsetkpglobal
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
+        totalins dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insomsetkpglobal
+    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+    case
+        when isnull(percentQtyNetto,0) < 0.80 then 0
+        when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpNettoCurr,0)
+        when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpNettoCurr,0)
+        when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpNettoCurr,0)
+        else 0
+    end totalins
+    from tempomsetkp
+    ;
+
 end if;
 end;
 $$
