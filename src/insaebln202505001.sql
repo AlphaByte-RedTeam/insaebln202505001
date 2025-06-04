@@ -308,12 +308,12 @@ if 1=1 then
 
     perform create local temporary table if not exists prelistlt
     (
-        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),
+        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),
         deQtyNetto dec(25,6),deRpNetto dec(25,6),chkp varchar(255)
     ) on commit preserve rows;
 
     perform insert into prelistlt
-    select 0 tipeoms,inkdwilayah,chkdemployee,chkdsite,
+    select 0 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
     sum(case when isnull(inkdkonvbesarid,0) = 0 then 0 else tgtQtyThLalu/inkdkonvbesarid end),
     sum(tgtOmsThLalu) tgtOmsThLalu,chkp
     from (
@@ -326,15 +326,15 @@ if 1=1 then
         select product_key,inkdkonvbesarid,chkdbarang,chkp from produkPPI
     ) b on a.product_key = b.product_key
     left join (
-        select customer_key,inkdwilayah,chkdsite,chkdemployee
+        select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
         from customer
     ) c on a.customer_key = c.customer_key
-    group by inkdwilayah,chkdsite,chkdemployee,chkp
+    group by inkdwilayah,chkdsite,chkdemployee,chkdcustomer,chkp
     ;
 
     perform insert into prelistlt
-    select 2 tipeoms,inkdwilayah,chkdemployee,chkdsite,
-    sum(case when isnull(inkdkonvbesarid,0) = 0 then 0 else deqtynettocurr/inkdkonvbesarid end),
+    select 2 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
+    sum(case when isnull(inkdkonvbesarid,0) <= 0 or isnull(deqtynettocurr,0) <= 0 then 0 else deqtynettocurr/inkdkonvbesarid end),
     sum(derpnettocurr) derpnettocurr,chkp
     from (
         select customer_key,product_key,sum(deqtynetto) deqtynettocurr,sum(derpnetto) derpnettocurr
@@ -346,10 +346,10 @@ if 1=1 then
         select product_key,inkdkonvbesarid,chkdbarang,chkp from produkPPI
     ) b on a.product_key = b.product_key
     left join (
-        select customer_key,inkdwilayah,chkdsite,chkdemployee
+        select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
         from customer
     ) c on a.customer_key = c.customer_key
-    group by inkdwilayah,chkdsite,chkdemployee,chkp
+    group by inkdwilayah,chkdsite,chkdemployee,chkdcustomer,chkp
     ;
 
 -- cross join dengan produkPPI
@@ -363,10 +363,10 @@ if 1=1 then
     ) on commit preserve rows;
 
     perform insert into tempomsetkp
-    select inkdwilayah,chkdemployee,chkp,
+    select inkdwilayah,chkdemployee,chkp,chkdcustomer
     isnull(deQtyNettoThLalu,0) qtyNettoThLalu,isnull(deRpNettoThLalu,0) rpNettoThLalu,isnull(deQtyNettoCurr,0) qtyNettoCurr,isnull(deRpNettoCurr,0) rpNettoCurr,
-    sum(case when qtyNettoThLalu = 0 then 0 else qtyNettoCurr/qtyNettoThLalu end) percentQtyNetto,
-    sum(case when rpNettoThLalu = 0 then 0 else rpNettoCurr/rpNettoThLalu end) percentRpNetto
+    sum(case when qtyNettoThLalu <= 0 or qtyNettoCurr <= 0 then 0 else qtyNettoCurr/qtyNettoThLalu end) percentQtyNetto,
+    sum(case when rpNettoThLalu <= 0 or rpNettoCurr <= 0 then 0 else rpNettoCurr/rpNettoThLalu end) percentRpNetto
     from (
         select inkdwilayah,chkdemployee,chkp,
         sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
@@ -380,6 +380,9 @@ if 1=1 then
     ;
 
 --     perform create local temporary table if not exists insomsetkp --> perhitungan untuk insentif omset kp
+--     (
+--         inkdwilayah
+--     ) on commit preserve rows;
 
 end if;
 end;
