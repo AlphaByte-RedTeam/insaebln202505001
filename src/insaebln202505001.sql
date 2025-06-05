@@ -28,8 +28,8 @@ declare
 	datglawal date;
 	datglakhir date;
 
-	vtahunlast int;
-	vbulanlast int;
+	vtahunhistory int;
+	vbulanhistory int;
 
 	nosurat varchar(255);
 
@@ -60,6 +60,8 @@ declare
 begin
 if 1=1 then
     vEntity := SELECT chvalue FROM lp_mreportfilter WHERE chkey = 'db';
+
+    nosurat := '180-ARTA-SDKP_AB2-XI-2024'; -- TODO: Change the nomor surat later
 
     waktusaatini := select now();
 
@@ -92,8 +94,8 @@ if 1=1 then
 
 	if vposisi in (0) then
 		periodlast := select max(intahun||right('00'||inbulan,2)) from lp_mdepo_history;
-		vtahunlast := left(periodlast,4)::int;
-		vbulanlast := right(periodlast,2)::int;
+		vtahunhistory := left(periodlast,4)::int;
+		vbulanhistory := right(periodlast,2)::int;
 	end if;
 
     perform create local temporary table if not exists wilayah (wil int) on commit preserve rows;
@@ -173,7 +175,7 @@ if 1=1 then
                 select chkdda,chjabatan,chNama from PPI_mInsDALoad
             ) b on a.chkdda = b.chkdda
             where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunlast and inbulan = vbulanlast
+            and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
 
@@ -192,7 +194,7 @@ if 1=1 then
                 select chkdda,chjabatan,chNama from PPI_mInsDALoad
             ) b on a.chkdda = b.chkdda
             where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunlast and inbulan = vbulanlast
+            and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
     end if;
@@ -226,7 +228,7 @@ if 1=1 then
             chflagitemcustom,chflagaktif,chflagitemfestive
             from PPI_mItem
         ) b on product.chkdbarang = b.chkdbarang
-        and intahun = vtahunlast and inbulan = vbulanlast
+        and intahun = vtahunhistory and inbulan = vbulanhistory
         ;
     end if;
 
@@ -267,7 +269,7 @@ if 1=1 then
             from lp_mcustomer_history cust
             inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunlast and inbulan = vbulanlast
+            and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
 
@@ -278,7 +280,7 @@ if 1=1 then
             from lp_mcustomer_aarta_history cust
             inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunlast and inbulan = vbulanlast
+            and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
     end if;
