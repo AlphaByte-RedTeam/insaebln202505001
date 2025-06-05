@@ -31,15 +31,6 @@ declare
 	vtahunlast int;
 	vbulanlast int;
 
-	file_name varchar(255);
-	set_cmd varchar(255);
-	unset_cmd varchar(255);
-
-	vnmfile1 varchar(255);
-	vnmfile2 varchar(255);
-	vnmfile3 varchar(255);
-	vnmfile4 varchar(255);
-
 	nosurat varchar(255);
 
 	vinstagihan int;
@@ -105,19 +96,6 @@ if 1=1 then
 		vbulanlast := right(periodlast,2)::int;
 	end if;
 
---     MySetDir := '/dwh/'||vEntity||'/report/rutin/insentif/insaebln202505001/'||vnama||'.csv';
-
--- 	vPath := SUBSTR(MySetDir,1,INSTR(MySetDir, '/', -1)-1);
--- 	vFile := REPLACE(SUBSTR(MySetDir,INSTR(MySetDir, '/', -1)+1),'.csv','');
-
--- 	vnmfile1 := vPath||'/'||vnama;
--- 	vnmfile2 := vPath||'/'||vuser||'-Loadins-1-'||vreqkey||'-'||vdate||'.txt';
--- 	vFile2 := REPLACE(SUBSTR(vnmfile2,INSTR(vnmfile2, '/', -1)+1),'.txt','');
--- 	vnmfile3 := vPath||'/'||vuser||'-Loadins-2-'||vreqkey||'-'||vdate||'.txt';
--- 	vFile3 := REPLACE(SUBSTR(vnmfile3,INSTR(vnmfile3, '/', -1)+1),'.txt','');
--- 	vnmfile4 := '/dwh/'||vEntity||'/report/rutin/insentif/konsolins/insdahrn/'||replace(vnama,'.csv','-'||vwilayah||'-'||(case when vdepolp in (0,1) then 'depo' else 'agen' end)||'.csv');
--- 	vFile4 := REPLACE(SUBSTR(vnmfile4,INSTR(vnmfile4, '/', -1)+1),'.csv','');
-
     perform create local temporary table if not exists wilayah (wil int) on commit preserve rows;
 
 	perform insert into wilayah
@@ -136,7 +114,7 @@ if 1=1 then
 
 	perform create local temporary table if not exists employee
 	(
-	    da_key int,chKdDa varchar(255),inKdWilayah int,chKetWilayah varchar(255),inKdCabang int,chKetCabang varchar(255),
+	    chKdDa varchar(255),inKdWilayah int,chKetWilayah varchar(255),inKdCabang int,chKetCabang varchar(255),
 	    inKdDepo int,chKetDepo varchar(255),chJabatan varchar(255),chKdSite varchar(255),inKdType int,
         chKdEmployee varchar(255),chNamaEmployee varchar(255)
     ) on commit preserve rows;
@@ -144,7 +122,7 @@ if 1=1 then
     if vposisi in (1) then
         if vdepolp in (0,1) then
             perform insert into employee
-            select a.da_key,a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
+            select a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
             inkddepo,chketdepo,chjabatan,chkdsite,
             case
                 when vtipeperiode = 1 then 1
@@ -153,7 +131,7 @@ if 1=1 then
             end inkdtype,
             substring(chkdemployee,2),chNama chNamaEmployee
             from lp_mda a
-            left join (
+            inner join (
                 select chkdda,chjabatan,chNama from PPI_mInsDALoad
             ) b on a.chkdda = b.chkdda
             where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
@@ -162,7 +140,7 @@ if 1=1 then
 
         if vdepolp in (2) then
             perform insert into employee
-            select a.da_key,a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
+            select a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
             inkddepo,chketdepo,chjabatan,chkdsite,
             case
                 when vtipeperiode = 1 then 1
@@ -171,7 +149,7 @@ if 1=1 then
             end inkdtype,
             substring(chkdemployee,2),chNama chNamaEmployee
             from lp_mda_aarta a
-            left join (
+            inner join (
                 select chkdda,chjabatan,chNama from PPI_mInsDALoad
             ) b on a.chkdda = b.chkdda
             where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
@@ -302,7 +280,8 @@ if 1=1 then
 
     /*
      ** Tipe Omset Classification (tipeoms) **
-     ** 0: insentif achieve sales vs target per produk aturan May 2025 - 001
+     ** 0: insentif achieve sales vs target tahun lalu
+     ** 2: insentif achieve sales vs target tahun & bulan berjalan
      ** continue here...
      */
 
