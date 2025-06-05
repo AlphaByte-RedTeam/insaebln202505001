@@ -228,7 +228,7 @@ if 1=1 then
         select product.product_key,product.inkdkonvbesarid,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
         chpt,chflagitemcustom,chflagaktif,chflagitemfestive
         from lp_mproduct product
-        inner join (
+        left join (
             select chkdbarang,chkp,chklasifikasi,chkpprodukmodel,chpt,chflagitemfestive
             chflagitemcustom,chflagaktif,chflagitemfestive
             from PPI_mItem
@@ -241,7 +241,7 @@ if 1=1 then
         select product.product_key,product.inkdkonvbesarid,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
         chpt,chflagitemcustom,chflagaktif,chflagitemfestive
         from lp_mproduct_history product
-        inner join (
+        left join (
             select chkdbarang,chkp,chklasifikasi,chkpprodukmodel,chpt,chflagitemfestive
             chflagitemcustom,chflagaktif,chflagitemfestive
             from PPI_mItem
