@@ -420,7 +420,8 @@ if 1=1 then
 
     perform insert into listlt
     select tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
-    from prelistlt;
+    from prelistlt
+    where chkdcustomer is not null;
 
 end if;
 end;
