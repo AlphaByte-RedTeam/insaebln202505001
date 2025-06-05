@@ -325,7 +325,7 @@ if 1=1 then
     left join (
         select product_key,inkdkonvbesarid,chkdbarang,chkp from produkPPI
     ) b on a.product_key = b.product_key
-    left join (
+    inner join (
         select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
         from customer
     ) c on a.customer_key = c.customer_key
@@ -345,7 +345,7 @@ if 1=1 then
     left join (
         select product_key,inkdkonvbesarid,chkdbarang,chkp from produkPPI
     ) b on a.product_key = b.product_key
-    left join (
+    inner join (
         select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
         from customer
     ) c on a.customer_key = c.customer_key
