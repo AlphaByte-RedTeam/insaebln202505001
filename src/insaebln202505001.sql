@@ -313,7 +313,7 @@ if 1=1 then
     ) on commit preserve rows;
 
     perform insert into prelistlt
-    select 0 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
+    select 0 tipeoms,inkdwilayah,chkdemployee,chkdsite,null,
     sum(case when isnull(inkdkonvbesarid,0) = 0 then 0 else tgtQtyThLalu/inkdkonvbesarid end),
     sum(tgtOmsThLalu) tgtOmsThLalu,chkp
     from (
@@ -445,6 +445,15 @@ if 1=1 then
     end totalins
     from tempomsetkp
     ;
+
+    perform create local temporary table if not exists listlt
+    (
+        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255)
+    ) on commit preserve rows;
+
+    perform insert into listlt
+    select tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
+    from prelistlt;
 
 end if;
 end;
