@@ -18,44 +18,25 @@ create or replace procedure RPT_insaebln202505001
 ) language PLvSQL as $$
 
 declare
-	vEntity varchar(255);
-	MySetDir varchar(255);
+    periodhistory varchar(255);
+    vtahunlalu int;
+    datglawal date;
+    datglakhir date;
 
-	damaxdatemin6 date;
+    vtahunhistory int;
+    vbulanhistory int;
 
-	periodlast varchar(255);
-	vtahunlalu int;
-	datglawal date;
-	datglakhir date;
+    nosurat varchar(255);
 
-	vtahunhistory int;
-	vbulanhistory int;
+    vbulan int;
 
-	nosurat varchar(255);
+    charea varchar(255);
+    vketemployee varchar(255);
+    vketposisi varchar(255);
+    waktusaatini timestamp;
 
-	vinstagihan int;
-	ketteam varchar(255);
-	pathkonsol varchar(255);
-
-	minharikerjatmo date;
-	maxharikerjatmo date;
-
-	maxdate date;
-	maxdateagen date;
-
-	vsepup int;
-	vbulan int;
-
-	charea varchar(255);
-	vketemployee varchar(255);
-	vketposisi varchar(255);
-	waktusaatini timestamp;
-
-	vPath varchar(255);
-	vFile varchar(255);
-	vFile2 varchar(255);
-	vFile3 varchar(255);
-	vFile4 varchar(255);
+    vEntity varchar(50);
+    ketTeam varchar(50);
 
 begin
 if 1=1 then
@@ -68,56 +49,56 @@ if 1=1 then
     vbulan := vperiode;
 
     vketemployee :=
-	case
-		when vtipeperiode in (1) 	then 'AE'
-		when vtipeperiode in (2) 	then 'AAM'
-		when vtipeperiode in (3) 	then 'RBM'
-	end;
+    case
+        when vtipeperiode in (1) 	then 'AE'
+        when vtipeperiode in (2) 	then 'AAM'
+        when vtipeperiode in (3) 	then 'RBM'
+    end;
 
-	vketposisi :=
-	case
-		when vposisi in (0) 	then 'Last'
-		when vposisi in (1) 	then 'Current'
-	end;
+    vketposisi :=
+    case
+        when vposisi in (0) 	then 'Last'
+        when vposisi in (1) 	then 'Current'
+    end;
 
-	ketteam :=
-	case
-		when vtipeperiode = 1	then 'AE'
-		when vtipeperiode = 2	then 'AAM'
-		when vtipeperiode = 3	then 'RBM'
-	end;
+    ketteam :=
+    case
+        when vtipeperiode = 1	then 'AE'
+        when vtipeperiode = 2	then 'AAM'
+        when vtipeperiode = 3	then 'RBM'
+    end;
 
     datglawal := select min(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
-	datglakhir := select max(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
+    datglakhir := select max(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
 
-	vtahunlalu := vtahun - 1;
+    vtahunlalu := vtahun - 1;
 
-	if vposisi in (0) then
-		periodlast := select max(intahun||right('00'||inbulan,2)) from lp_mdepo_history;
-		vtahunhistory := left(periodlast,4)::int;
-		vbulanhistory := right(periodlast,2)::int;
-	end if;
+    if vposisi in (0) then
+        periodhistory := select max(intahun||right('00'||inbulan,2)) from lp_mdepo_history;
+        vtahunhistory := left(periodhistory,4)::int;
+        vbulanhistory := right(periodhistory,2)::int;
+    end if;
 
     perform create local temporary table if not exists wilayah (wil int) on commit preserve rows;
 
-	perform insert into wilayah
-	select split_part(vwilayah, '-', period_key)::int from dual
-	cross join (select period_key from lp_mperiod where period_key <= regexp_count(vwilayah, '-')+1) a
-	;
+    perform insert into wilayah
+    select split_part(vwilayah, '-', period_key)::int from dual
+    cross join (select period_key from lp_mperiod where period_key <= regexp_count(vwilayah, '-')+1) a
+    ;
 
-	perform create local temporary table if not exists vtempwaktu
-	(
-		period_key int,intahun int,inbulan int,datgl date,inpekansm131 int
-	) on commit preserve rows;
+    perform create local temporary table if not exists vtempwaktu
+    (
+        period_key int,intahun int,inbulan int,datgl date,inpekansm131 int
+    ) on commit preserve rows;
 
     perform insert into vtempwaktu
-	select period_key,intahun,inbulan,datgl,inpekansm131 from lp_mperiod
+    select period_key,intahun,inbulan,datgl,inpekansm131 from lp_mperiod
     where intahun = vtahun and inbulan = vbulan;
 
-	perform create local temporary table if not exists employee
-	(
-	    chKdDa varchar(255),inKdWilayah int,chKetWilayah varchar(255),inKdCabang int,chKetCabang varchar(255),
-	    inKdDepo int,chKetDepo varchar(255),chJabatan varchar(255),chKdSite varchar(255),inKdType int,
+    perform create local temporary table if not exists employee
+    (
+        chKdDa varchar(255),inKdWilayah int,chKetWilayah varchar(255),inKdCabang int,chKetCabang varchar(255),
+        inKdDepo int,chKetDepo varchar(255),chJabatan varchar(255),chKdSite varchar(255),inKdType int,
         chKdEmployee varchar(255),chNamaEmployee varchar(255)
     ) on commit preserve rows;
 
