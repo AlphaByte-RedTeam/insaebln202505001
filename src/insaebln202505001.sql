@@ -217,27 +217,37 @@ if 1=1 then
     (
         customer_key int,inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),
         inkddepo int,chketdepo varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),chnamacustomer varchar(255),
-        chkdemployee varchar(255),chkdda varchar(255),datglmulaitransaksi date
+        chkdemployee varchar(255),chnamaemployee varchar(255),chkdda varchar(255),datglmulaitransaksi date
     ) on commit preserve rows;
 
     if vposisi in (1) then
         if vdepolp in (0,1) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
-            from lp_mcustomer cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
-            where cust.inkdwilayah in (select wil from wilayah)
+            select a.customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+            chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+            from dm_tjual_mon a
+            inner join (
+                select customer_key,a.chkdda,a.chkdsite,chkdemployee,chnamaemployee,a.inkdwilayah,a.chketwilayah,
+                a.inkdcabang,a.chketcabang,a.inkddepo,a.chketdepo,a.chkdcustomer,a.chnamacustomer,datglmulaitransaksi
+                from lp_mcustomer a
+                inner join employee b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
+            ) b on a.customer_key = b.customer_key
+            where b.inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
             ;
         end if;
 
         if vdepolp in (2) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
-            from lp_mcustomer_aarta cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
-            where cust.inkdwilayah in (select wil from wilayah)
+            select a.customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+            chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+            from dm_tjual_mon a
+            inner join (
+                select customer_key,a.chkdda,a.chkdsite,chkdemployee,chnamaemployee,a.inkdwilayah,a.chketwilayah,
+                a.inkdcabang,a.chketcabang,a.inkddepo,a.chketdepo,a.chkdcustomer,a.chnamacustomer,datglmulaitransaksi
+                from lp_mcustomer_aarta a
+                inner join employee b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
+            ) b on a.customer_key = b.customer_key
+            where b.inkdwilayah in (select wil from wilayah) and intahun = intahun and inbulan = vbulan
             ;
         end if;
     end if;
@@ -245,23 +255,31 @@ if 1=1 then
     if vposisi in (0) then
         if vdepolp in (0,1) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
-            from lp_mcustomer_history cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
-            where cust.inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunhistory and inbulan = vbulanhistory
+            select a.customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+            chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+            from dm_tjual_mon a
+            inner join (
+                select customer_key,a.chkdda,a.chkdsite,chkdemployee,chnamaemployee,a.inkdwilayah,a.chketwilayah,
+                a.inkdcabang,a.chketcabang,a.inkddepo,a.chketdepo,a.chkdcustomer,a.chnamacustomer,datglmulaitransaksi
+                from lp_mcustomer_history a
+                inner join employee b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
+            ) b on a.customer_key = b.customer_key
+            where b.inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
 
         if vdepolp in (2) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
-            from lp_mcustomer_aarta_history cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
-            where cust.inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunhistory and inbulan = vbulanhistory
+            select a.customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+            chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+            from dm_tjual_mon a
+            inner join (
+                select customer_key,a.chkdda,a.chkdsite,chkdemployee,chnamaemployee,a.inkdwilayah,a.chketwilayah,
+                a.inkdcabang,a.chketcabang,a.inkddepo,a.chketdepo,a.chkdcustomer,a.chnamacustomer,datglmulaitransaksi
+                from lp_mcustomer_aarta_history a
+                inner join employee b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
+            ) b on a.customer_key = b.customer_key
+            where b.inkdwilayah in (select wil from wilayah) and intahun =  vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
     end if;
@@ -319,7 +337,6 @@ if 1=1 then
     group by inkdwilayah,chkdsite,chkdemployee,chkdcustomer,chkp
     ;
 
--- cross join dengan produkPPI
     -- tempomsetkp:
     -- untuk mencari persentase per KP
     perform create local temporary table if not exists tempomsetkp
@@ -415,13 +432,24 @@ if 1=1 then
 
     perform create local temporary table if not exists listlt
     (
-        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255)
+        inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),derpnetto dec(25,6)
     ) on commit preserve rows;
 
     perform insert into listlt
-    select tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
+    select inkdwilayah,chkdemployee,chkdsite,chkdcustomer,sum(derpnetto)
     from prelistlt
-    where chkdcustomer is not null;
+    where chkdcustomer is not null
+    group by inkdwilayah,chkdemployee,chkdsite,chkdcustomer
+    ;
+
+    perform create local temporary table if not exists templt
+    (
+        inkdwilayah int,chkdemployee varchar(255),inlt int
+    ) on commit preserve rows;
+
+--     perform insert into templt
+--     select inkdwilayah,chkdemployee,chkdcustomer,
+--     from listlt
 
 end if;
 end;
