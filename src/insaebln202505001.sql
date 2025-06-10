@@ -266,12 +266,12 @@ if 1=1 then
 
     perform create local temporary table if not exists prelistlt
     (
-        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),
-        deQtyNetto dec(25,6),deRpNetto dec(25,6),chkp varchar(255)
+        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),chkp varchar(255),
+        deQtyNetto dec(25,6),deRpNetto dec(25,6)
     ) on commit preserve rows;
 
     perform insert into prelistlt
-    select 0 tipeoms,null,null,null,null,deTarget deQtyTarget,null,chketproduk
+    select 0 tipeoms,null,null,null,null,chketproduk chkp,deTarget deQtyTarget,null
     from (
         select chketproduk,deTarget
         from PPI_mInsTargetLoad
@@ -280,26 +280,25 @@ if 1=1 then
     ) a
     ;
 
---     perform insert into prelistlt
---     select 0 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
---     sum(case when isnull(inkdkonvbesarid,0) <= 0 or isnull(deqtynettocurr,0) <= 0 then 0 else deqtynettocurr/inkdkonvbesarid end),
---     sum(derpnettocurr) derpnettocurr,chkp
---     from (
---         select customer_key,product_key,sum(deqtynetto) deqtynettocurr,sum(derpnetto) derpnettocurr
---         from dm_tjual_mon
---         where intahun in (vtahun) and inbulan in (vbulan)
---         group by customer_key,product_key
---     ) a
---     left join (
---         select product_key,chkdbarang,chkp from produkPPI
---     ) b on a.product_key = b.product_key
---     inner join (
---         select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
---         from customer
---     ) c on a.customer_key = c.customer_key
---     group by inkdwilayah,chkdsite,chkdemployee,chkdcustomer,chkp
---     ;
---
+    perform insert into prelistlt
+    select 2 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkp
+    from (
+        select product_key,customer_key,deqtynetto,derpnetto
+        from dm_tjual_mon
+        where intahun = vtahun and inbulan = vbulan
+    ) a
+    left join (
+        select product_key,chkp
+        from produkPPI
+    ) b on a.product_key = b.product_key
+    inner join (
+        select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
+        from customer
+        where inkdwilayah in (select wil from wilayah)
+    ) c on a.customer_key = c.customer_key
+    group by inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkp
+    ;
+
 -- -- cross join dengan produkPPI
 --     -- tempomsetkp:
 --     -- untuk mencari persentase per KP
@@ -407,4 +406,4 @@ end if;
 end;
 $$
 
---call RPT_insaebln202505001 ('insaebln202505001-Andrew_mai-'||replace(TO_CHAR(CURRENT_TIMESTAMP,'YYYYMMDD-HH24:MI:SS'),':','')||'-testing.csv','wilayah','01','ALL',1,'2025',5,1,0,'Andrew_mai','testing',TO_CHAR(CURRENT_TIMESTAMP,'DD-MM-YYYY-HH24:MI:SS'),1,0,0);
+--call RPT_insaebln202505001 ('insaebln202505001-Andrew_mai-'||replace(TO_CHAR(CURRENT_TIMESTAMP,'YYYYMMDD-HH24:MI:SS'),':','')||'-testing.csv','wilayah','01','ALL',1,2025,5,1,0,'Andrew_mai','testing',TO_CHAR(CURRENT_TIMESTAMP,'DD-MM-YYYY-HH24:MI:SS'),1,0,0);
