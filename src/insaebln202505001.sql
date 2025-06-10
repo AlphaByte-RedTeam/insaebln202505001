@@ -223,15 +223,15 @@ if 1=1 then
         from dm_tjual_mon
         where intahun = vtahun and inbulan = vbulan
     ) a
-    left join (
-        select product_key,chkp
-        from produkPPI
-    ) b on a.product_key = b.product_key
     inner join (
         select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
         from customer
         where inkdwilayah in (select wil from wilayah)
-    ) c on a.customer_key = c.customer_key
+    ) b on a.customer_key = b.customer_key
+    left join (
+        select product_key,chkp
+        from produkPPI
+    ) c on a.product_key = c.product_key
     group by inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkp
     ;
 
