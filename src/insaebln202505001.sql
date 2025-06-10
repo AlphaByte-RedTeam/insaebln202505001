@@ -261,24 +261,24 @@ if 1=1 then
     group by inkdwilayah1,chkdemployee,chkdcustomer,chkp,deQtyTarget,deQtyOmset,deRpOmset
     ;
 
---     perform create local temporary table if not exists insomsetkp
---     (
---         inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
---         tarifins dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into insomsetkp
---     select inkdwilayah,chkdemployee,chkp,chkdcustomer,
---     case
---         when isnull(percentQtyNetto,0) < 0.80 then 0
---         when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpNettoCurr,0)
---         when isnull(percentQtyNetto,0) < 1 then 0.0035 * isnull(deRpNettoCurr,0)
---         when isnull(percentQtyNetto,0) >= 1 then 0.0060 * isnull(deRpNettoCurr,0)
---         else 0
---     end tarifins
---     from tempomsetkp
---     ;
---
+    perform create local temporary table if not exists insomsetkp
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
+        tarifins dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insomsetkp
+    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+    case
+        when isnull(percentQtyNetto,0) < 0.80 then 0
+        when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpOmset,0)
+        when isnull(percentQtyNetto,0) < 1 then 0.0035 * isnull(deRpOmset,0)
+        when isnull(percentQtyNetto,0) >= 1 then 0.0060 * isnull(deRpOmset,0)
+        else 0
+    end tarifins
+    from tempomsetkp
+    ;
+
 --     perform create local temporary table if not exists tempomsetkpglobal
 --     (
 --         inkdwilayah int,chkdemployee varchar(255),
