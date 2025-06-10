@@ -86,15 +86,6 @@ if 1=1 then
     cross join (select period_key from lp_mperiod where period_key <= regexp_count(vwilayah, '-')+1) a
     ;
 
-    perform create local temporary table if not exists vtempwaktu
-    (
-        period_key int,intahun int,inbulan int,datgl date,inpekansm131 int
-    ) on commit preserve rows;
-
-    perform insert into vtempwaktu
-    select period_key,intahun,inbulan,datgl,inpekansm131 from lp_mperiod
-    where intahun = vtahun and inbulan = vbulan;
-
     perform create local temporary table if not exists employee
     (
         chKdDa varchar(255),inKdWilayah int,chKetWilayah varchar(255),inKdCabang int,chKetCabang varchar(255),
@@ -182,13 +173,13 @@ if 1=1 then
 
     perform create local temporary table if not exists produkPPI
     (
-        product_key int,inkdkonvbesarid int,chkdbarang varchar(255),chkp varchar(255),chklasifikasi varchar(255),chkpprodukmodel varchar(255),
+        product_key int,chkdbarang varchar(255),chkp varchar(255),chklasifikasi varchar(255),chkpprodukmodel varchar(255),
         chpt varchar(255),chflagitemcustom varchar(255),chflagaktif varchar(255),itemfestive varchar(255)
     ) on commit preserve rows;
 
     if vposisi in (1) then
         perform insert into produkPPI
-        select product.product_key,product.inkdkonvbesarid,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
+        select product.product_key,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
         chpt,chflagitemcustom,chflagaktif,chflagitemfestive
         from lp_mproduct product
         left join (
@@ -201,7 +192,7 @@ if 1=1 then
 
     if vposisi in (0) then
         perform insert into produkPPI
-        select product.product_key,product.inkdkonvbesarid,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
+        select product.product_key,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
         chpt,chflagitemcustom,chflagaktif,chflagitemfestive
         from lp_mproduct_history product
         left join (
@@ -280,147 +271,137 @@ if 1=1 then
     ) on commit preserve rows;
 
     perform insert into prelistlt
-    select 0 tipeoms,inkdwilayah,chkdemployee,chkdsite,null,
-    sum(case when isnull(inkdkonvbesarid,0) = 0 then 0 else tgtQtyThLalu/inkdkonvbesarid end),
-    sum(tgtOmsThLalu) tgtOmsThLalu,chkp
+    select 0 tipeoms,null,null,null,null,deTarget deQtyTarget,null,chketproduk
     from (
-        select customer_key,product_key,sum(deqtynetto/12.00) tgtQtyThLalu,sum(derpnetto/12.00) tgtOmsThLalu
-        from dm_tjual_mon
-        where intahun in (vtahunlalu)
-        group by customer_key,product_key
+        select chketproduk,deTarget
+        from PPI_mInsTargetLoad
+        where chjabatan = 'AE' and chproduk in ('KP','T')
+        and intahun = vtahun and inbulan = vbulan
     ) a
-    left join (
-        select product_key,inkdkonvbesarid,chkdbarang,chkp from produkPPI
-    ) b on a.product_key = b.product_key
-    inner join (
-        select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
-        from customer
-    ) c on a.customer_key = c.customer_key
-    group by inkdwilayah,chkdsite,chkdemployee,chkdcustomer,chkp
     ;
 
-    perform insert into prelistlt
-    select 2 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
-    sum(case when isnull(inkdkonvbesarid,0) <= 0 or isnull(deqtynettocurr,0) <= 0 then 0 else deqtynettocurr/inkdkonvbesarid end),
-    sum(derpnettocurr) derpnettocurr,chkp
-    from (
-        select customer_key,product_key,sum(deqtynetto) deqtynettocurr,sum(derpnetto) derpnettocurr
-        from dm_tjual_mon
-        where intahun in (vtahun) and inbulan in (vbulan)
-        group by customer_key,product_key
-    ) a
-    left join (
-        select product_key,inkdkonvbesarid,chkdbarang,chkp from produkPPI
-    ) b on a.product_key = b.product_key
-    inner join (
-        select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
-        from customer
-    ) c on a.customer_key = c.customer_key
-    group by inkdwilayah,chkdsite,chkdemployee,chkdcustomer,chkp
-    ;
-
--- cross join dengan produkPPI
-    -- tempomsetkp:
-    -- untuk mencari persentase per KP
-    perform create local temporary table if not exists tempomsetkp
-    (
-        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
-        deQtyNettoThLalu dec(25,6),deRpNettoThLalu dec(25,6),deQtyNettoCurr dec(25,6),deRpNettoCurr dec(25,6),
-        percentQtyNetto dec(25,6),percentRpNetto dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into tempomsetkp
-    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
-    isnull(deQtyNettoThLalu,0) qtyNettoThLalu,isnull(deRpNettoThLalu,0) rpNettoThLalu,isnull(deQtyNettoCurr,0) qtyNettoCurr,isnull(deRpNettoCurr,0) rpNettoCurr,
-    sum(case when (qtyNettoThLalu <= 0) or (qtyNettoCurr <= 0) then 0 else qtyNettoCurr/qtyNettoThLalu end) percentQtyNetto,
-    sum(case when (rpNettoThLalu <= 0) or (rpNettoCurr <= 0) then 0 else rpNettoCurr/rpNettoThLalu end) percentRpNetto
-    from (
-        select inkdwilayah,chkdemployee,chkp,chkdcustomer,
-        sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
-        sum(case when tipeoms in (0) then deRpNetto end) deRpNettoThLalu,
-        sum(case when tipeoms in (2) then deQtyNetto end) deQtyNettoCurr,
-        sum(case when tipeoms in (2) then deRpNetto end) deRpNettoCurr
-        from prelistlt where tipeoms in (0,2)
-        group by inkdwilayah,chkdemployee,chkdcustomer,chkp
-    ) a
-    group by inkdwilayah,chkdemployee,chkdcustomer,chkp,deQtyNettoThLalu,deRpNettoThLalu,deQtyNettoCurr,deRpNettoCurr
-    ;
-
-    perform create local temporary table if not exists insomsetkp
-    (
-        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
-        tarifins dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into insomsetkp
-    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
-    case
-        when isnull(percentQtyNetto,0) < 0.80 then 0
-        when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpNettoCurr,0)
-        when isnull(percentQtyNetto,0) < 1 then 0.0035 * isnull(deRpNettoCurr,0)
-        when isnull(percentQtyNetto,0) >= 1 then 0.0060 * isnull(deRpNettoCurr,0)
-        else 0
-    end tarifins
-    from tempomsetkp
-    ;
-
-    perform create local temporary table if not exists tempomsetkpglobal
-    (
-        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),
-        deQtyNettoThLalu dec(25,6),deRpNettoThLalu dec(25,6),deQtyNettoCurr dec(25,6),deRpNettoCurr dec(25,6),
-        percentQtyNetto dec(25,6),percentRpNetto dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into tempomsetkpglobal
-    select inkdwilayah,chkdemployee,chkp,null,null,null,null,
-    sum(case when (deQtyNettoThLalu <= 0) or (deQtyNettoCurr <= 0) then 0 else deQtyNettoCurr/deQtyNettoThLalu end) percentQtyNetto,
-    sum(case when (deRpNettoThLalu <= 0) or (deRpNettoCurr <= 0) then 0 else deRpNettoCurr/deRpNettoThLalu end) percentRpNetto
-    from (
-        select inkdwilayah,chkdemployee,chkp,
-        sum(deQtyNettoThLalu) deQtyNettoThLalu,
-        sum(deRpNettoThLalu) deRpNettoThLalu,
-        sum(deQtyNettoCurr) deQtyNettoCurr,
-        sum(deRpNettoCurr) deRpNettoCurr
-        from (
-            select inkdwilayah,chkdemployee,chkp,chkdcustomer,
-            sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
-            sum(case when tipeoms in (0) then deRpNetto end) deRpNettoThLalu,
-            sum(case when tipeoms in (2) then deQtyNetto end) deQtyNettoCurr,
-            sum(case when tipeoms in (2) then deRpNetto end) deRpNettoCurr
-            from prelistlt where tipeoms in (0,2)
-            group by inkdwilayah,chkdemployee,chkdcustomer,chkp
-        ) a
-        group by inkdwilayah,chkdemployee,chkp
-    ) a
-    group by inkdwilayah,chkdemployee,chkp
-    ;
-
-    perform create local temporary table if not exists insomsetkpglobal
-    (
-        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
-        totalins dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into insomsetkpglobal
-    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
-    case
-        when isnull(percentQtyNetto,0) < 0.80 then 0
-        when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpNettoCurr,0)
-        when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpNettoCurr,0)
-        when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpNettoCurr,0)
-        else 0
-    end totalins
-    from tempomsetkp
-    ;
-
-    perform create local temporary table if not exists listlt
-    (
-        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255)
-    ) on commit preserve rows;
-
-    perform insert into listlt
-    select tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
-    from prelistlt;
+--     perform insert into prelistlt
+--     select 0 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
+--     sum(case when isnull(inkdkonvbesarid,0) <= 0 or isnull(deqtynettocurr,0) <= 0 then 0 else deqtynettocurr/inkdkonvbesarid end),
+--     sum(derpnettocurr) derpnettocurr,chkp
+--     from (
+--         select customer_key,product_key,sum(deqtynetto) deqtynettocurr,sum(derpnetto) derpnettocurr
+--         from dm_tjual_mon
+--         where intahun in (vtahun) and inbulan in (vbulan)
+--         group by customer_key,product_key
+--     ) a
+--     left join (
+--         select product_key,chkdbarang,chkp from produkPPI
+--     ) b on a.product_key = b.product_key
+--     inner join (
+--         select customer_key,inkdwilayah,chkdsite,chkdemployee,chkdcustomer
+--         from customer
+--     ) c on a.customer_key = c.customer_key
+--     group by inkdwilayah,chkdsite,chkdemployee,chkdcustomer,chkp
+--     ;
+--
+-- -- cross join dengan produkPPI
+--     -- tempomsetkp:
+--     -- untuk mencari persentase per KP
+--     perform create local temporary table if not exists tempomsetkp
+--     (
+--         inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
+--         deQtyNettoThLalu dec(25,6),deRpNettoThLalu dec(25,6),deQtyNettoCurr dec(25,6),deRpNettoCurr dec(25,6),
+--         percentQtyNetto dec(25,6),percentRpNetto dec(25,6)
+--     ) on commit preserve rows;
+--
+--     perform insert into tempomsetkp
+--     select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+--     isnull(deQtyNettoThLalu,0) qtyNettoThLalu,isnull(deRpNettoThLalu,0) rpNettoThLalu,isnull(deQtyNettoCurr,0) qtyNettoCurr,isnull(deRpNettoCurr,0) rpNettoCurr,
+--     sum(case when (qtyNettoThLalu <= 0) or (qtyNettoCurr <= 0) then 0 else qtyNettoCurr/qtyNettoThLalu end) percentQtyNetto,
+--     sum(case when (rpNettoThLalu <= 0) or (rpNettoCurr <= 0) then 0 else rpNettoCurr/rpNettoThLalu end) percentRpNetto
+--     from (
+--         select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+--         sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
+--         sum(case when tipeoms in (0) then deRpNetto end) deRpNettoThLalu,
+--         sum(case when tipeoms in (2) then deQtyNetto end) deQtyNettoCurr,
+--         sum(case when tipeoms in (2) then deRpNetto end) deRpNettoCurr
+--         from prelistlt where tipeoms in (0,2)
+--         group by inkdwilayah,chkdemployee,chkdcustomer,chkp
+--     ) a
+--     group by inkdwilayah,chkdemployee,chkdcustomer,chkp,deQtyNettoThLalu,deRpNettoThLalu,deQtyNettoCurr,deRpNettoCurr
+--     ;
+--
+--     perform create local temporary table if not exists insomsetkp
+--     (
+--         inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
+--         tarifins dec(25,6)
+--     ) on commit preserve rows;
+--
+--     perform insert into insomsetkp
+--     select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+--     case
+--         when isnull(percentQtyNetto,0) < 0.80 then 0
+--         when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpNettoCurr,0)
+--         when isnull(percentQtyNetto,0) < 1 then 0.0035 * isnull(deRpNettoCurr,0)
+--         when isnull(percentQtyNetto,0) >= 1 then 0.0060 * isnull(deRpNettoCurr,0)
+--         else 0
+--     end tarifins
+--     from tempomsetkp
+--     ;
+--
+--     perform create local temporary table if not exists tempomsetkpglobal
+--     (
+--         inkdwilayah int,chkdemployee varchar(255),
+--         deQtyNettoThLalu dec(25,6),deRpNettoThLalu dec(25,6),deQtyNettoCurr dec(25,6),deRpNettoCurr dec(25,6),
+--         percentQtyNetto dec(25,6),percentRpNetto dec(25,6)
+--     ) on commit preserve rows;
+--
+--     perform insert into tempomsetkpglobal
+--     select inkdwilayah,chkdemployee,null,null,null,null,
+--     sum(case when (deQtyNettoThLalu <= 0) or (deQtyNettoCurr <= 0) then 0 else deQtyNettoCurr/deQtyNettoThLalu end) percentQtyNetto,
+--     sum(case when (deRpNettoThLalu <= 0) or (deRpNettoCurr <= 0) then 0 else deRpNettoCurr/deRpNettoThLalu end) percentRpNetto
+--     from (
+--         select inkdwilayah,chkdemployee,
+--         sum(deQtyNettoThLalu) deQtyNettoThLalu,
+--         sum(deRpNettoThLalu) deRpNettoThLalu,
+--         sum(deQtyNettoCurr) deQtyNettoCurr,
+--         sum(deRpNettoCurr) deRpNettoCurr
+--         from (
+--             select inkdwilayah,chkdemployee,chkdcustomer,
+--             sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
+--             sum(case when tipeoms in (0) then deRpNetto end) deRpNettoThLalu,
+--             sum(case when tipeoms in (2) then deQtyNetto end) deQtyNettoCurr,
+--             sum(case when tipeoms in (2) then deRpNetto end) deRpNettoCurr
+--             from prelistlt where tipeoms in (0,2)
+--             group by inkdwilayah,chkdemployee,chkdcustomer
+--         ) a
+--         group by inkdwilayah,chkdemployee
+--     ) a
+--     group by inkdwilayah,chkdemployee
+--     ;
+--
+--     perform create local temporary table if not exists insomsetkpglobal
+--     (
+--         inkdwilayah int,chkdemployee varchar(255),chkdcustomer varchar(255),
+--         totalins dec(25,6)
+--     ) on commit preserve rows;
+--
+--     perform insert into insomsetkpglobal
+--     select inkdwilayah,chkdemployee,chkdcustomer,
+--     case
+--         when isnull(percentQtyNetto,0) < 0.80 then 0
+--         when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpNettoCurr,0)
+--         when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpNettoCurr,0)
+--         when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpNettoCurr,0)
+--         else 0
+--     end totalins
+--     from tempomsetkp
+--     ;
+--
+--     perform create local temporary table if not exists listlt
+--     (
+--         tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255)
+--     ) on commit preserve rows;
+--
+--     perform insert into listlt
+--     select tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
+--     from prelistlt;
 
 end if;
 end;
