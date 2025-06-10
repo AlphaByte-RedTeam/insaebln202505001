@@ -86,91 +86,6 @@ if 1=1 then
     cross join (select period_key from lp_mperiod where period_key <= regexp_count(vwilayah, '-')+1) a
     ;
 
-    perform create local temporary table if not exists employee
-    (
-        chKdDa varchar(255),inKdWilayah int,chKetWilayah varchar(255),inKdCabang int,chKetCabang varchar(255),
-        inKdDepo int,chKetDepo varchar(255),chJabatan varchar(255),chKdSite varchar(255),inKdType int,
-        chKdEmployee varchar(255),chNamaEmployee varchar(255)
-    ) on commit preserve rows;
-
-    if vposisi in (1) then
-        if vdepolp in (0,1) then
-            perform insert into employee
-            select a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
-            inkddepo,chketdepo,chjabatan,chkdsite,
-            case
-                when vtipeperiode = 1 then 1
-                when vtipeperiode = 2 then 2
-                when vtipeperiode = 3 then 3
-            end inkdtype,
-            substring(chkdemployee,2),chNama chNamaEmployee
-            from lp_mda a
-            inner join (
-                select chkdda,chjabatan,chNama from PPI_mInsDALoad
-            ) b on a.chkdda = b.chkdda
-            where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
-            ;
-        end if;
-
-        if vdepolp in (2) then
-            perform insert into employee
-            select a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
-            inkddepo,chketdepo,chjabatan,chkdsite,
-            case
-                when vtipeperiode = 1 then 1
-                when vtipeperiode = 2 then 2
-                when vtipeperiode = 3 then 3
-            end inkdtype,
-            substring(chkdemployee,2),chNama chNamaEmployee
-            from lp_mda_aarta a
-            inner join (
-                select chkdda,chjabatan,chNama from PPI_mInsDALoad
-            ) b on a.chkdda = b.chkdda
-            where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
-            ;
-        end if;
-    end if;
-
-    if vposisi in (0) then
-        if vdepolp in (0,1) then
-            perform insert into employee
-            select a.da_key,a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
-            inkddepo,chketdepo,chjabatan,chkdsite,
-            case
-                when vtipeperiode = 1 then 1
-                when vtipeperiode = 2 then 2
-                when vtipeperiode = 3 then 3
-            end inkdtype,
-            substring(chkdemployee,2),chNama chNamaEmployee
-            from lp_mda_history a
-            left join (
-                select chkdda,chjabatan,chNama from PPI_mInsDALoad
-            ) b on a.chkdda = b.chkdda
-            where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunhistory and inbulan = vbulanhistory
-            ;
-        end if;
-
-        if vdepolp in (2) then
-            perform insert into employee
-            select a.da_key,a.chkdda,inkdwilayah,chketwilayah,inkdcabang,chketcabang,
-            inkddepo,chketdepo,chjabatan,chkdsite,
-            case
-                when vtipeperiode = 1 then 1
-                when vtipeperiode = 2 then 2
-                when vtipeperiode = 3 then 3
-            end inkdtype,
-            substring(chkdemployee,2),chNama chNamaEmployee
-            from lp_mda_aarta_history a
-            left join (
-                select chkdda,chjabatan,chNama from PPI_mInsDALoad
-            ) b on a.chkdda = b.chkdda
-            where chjabatan = 'AE' and inkdwilayah in (select wil from wilayah)
-            and intahun = vtahunhistory and inbulan = vbulanhistory
-            ;
-        end if;
-    end if;
-
     perform create local temporary table if not exists produkPPI
     (
         product_key int,chkdbarang varchar(255),chkp varchar(255),chklasifikasi varchar(255),chkpprodukmodel varchar(255),
@@ -208,16 +123,21 @@ if 1=1 then
     (
         customer_key int,inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),
         inkddepo int,chketdepo varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),chnamacustomer varchar(255),
-        chkdemployee varchar(255),chkdda varchar(255),datglmulaitransaksi date
+        chkdemployee varchar(255),chkdda varchar(255),chNamaEmp varchar(255),datglmulaitransaksi date
     ) on commit preserve rows;
 
     if vposisi in (1) then
         if vdepolp in (0,1) then
             perform insert into customer
             select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
+            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+            inner join (
+                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
+                from lp_mda a
+                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
+                where chjabatan = 'AE'
+            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             ;
         end if;
@@ -225,9 +145,14 @@ if 1=1 then
         if vdepolp in (2) then
             perform insert into customer
             select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
-            from lp_mcustomer_aarta cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+            chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
+            from lp_mcustomer cust
+            inner join (
+                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
+                from lp_mda_aarta a
+                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
+                where chjabatan = 'AE'
+            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             ;
         end if;
@@ -239,7 +164,12 @@ if 1=1 then
             select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
             chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_history cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+            inner join (
+                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
+                from lp_mda_history a
+                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
+                where chjabatan = 'AE'
+            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
@@ -250,7 +180,12 @@ if 1=1 then
             select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
             chkdcustomer,chnamacustomer,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_aarta_history cust
-            inner join employee emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+            inner join (
+                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
+                from lp_mda_aarta_history a
+                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
+                where chjabatan = 'AE'
+            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
@@ -281,7 +216,8 @@ if 1=1 then
     ;
 
     perform insert into prelistlt
-    select 2 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkp
+    select 2 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkp,
+    sum(deqtynetto) deqtynetto,sum(derpnetto) derpnetto
     from (
         select product_key,customer_key,deqtynetto,derpnetto
         from dm_tjual_mon
