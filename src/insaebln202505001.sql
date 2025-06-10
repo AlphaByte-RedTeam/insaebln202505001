@@ -178,59 +178,59 @@ if 1=1 then
             ;
         end if;
     end if;
---
---     perform create local temporary table if not exists produkPPI
---     (
---         inkdkonvbesarid int,chkdda varchar(255),chkdsite varchar(255),chkp varchar(255)
---     ) on commit preserve rows;
---
---     if vposisi in (1) then
---         if vdepolp in (0,1) then
---             perform insert into produkPPI
---             select inkdwilayah,chkdda,chkdsite,chkp from
---             (select distinct inkdwilayah,chkdda,chkdsite from customer) a
---             cross join (select distinct chkp from ppi_mitem) b
---             where inkdwilayah in (select wil from wilayah)
---             ;
---         end if;
---
---         if vdepolp in (2) then
---             perform insert into produkPPI
---             select inkdwilayah,chkdda,chkdsite,chkp from
---             (select distinct inkdwilayah,chkdda,chkdsite from customer) a
---             cross join (select distinct chkp from ppi_mitem) b
---             where inkdwilayah in (select wil from wilayah)
---             ;
---         end if;
---     end if;
---
---     if vposisi in (0) then
---         if vdepolp in (0,1) then
---             perform insert into produkPPI
---             select inkdwilayah,chkdda,chkdsite,chkp from
---             (select distinct inkdwilayah,chkdda,chkdsite from customer) a
---             cross join (select distinct chkp from ppi_mitem) b
---             where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
---             ;
---         end if;
---
---         if vdepolp in (2) then
---             perform insert into produkPPI
---             select inkdwilayah,chkdda,chkdsite,chkp from
---             (select distinct inkdwilayah,chkdda,chkdsite from customer) a
---             cross join (select distinct chkp from ppi_mitem) b
---             where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
---             ;
---         end if;
---     end if;
---
---     /*
---      ** Tipe Omset Classification (tipeoms) **
---      ** 0: insentif achieve sales vs target tahun lalu
---      ** 2: insentif achieve sales vs target tahun & bulan berjalan
---      ** continue here...
---      */
---
+
+    perform create local temporary table if not exists produkPPI
+    (
+        inkdkonvbesarid int,chkdda varchar(255),chkdsite varchar(255),chkp varchar(255)
+    ) on commit preserve rows;
+
+    if vposisi in (1) then
+        if vdepolp in (0,1) then
+            perform insert into produkPPI
+            select inkdwilayah,chkdda,chkdsite,chkp from
+            (select distinct inkdwilayah,chkdda,chkdsite from customer) a
+            cross join (select distinct chkp from ppi_mitem) b
+            where inkdwilayah in (select wil from wilayah)
+            ;
+        end if;
+
+        if vdepolp in (2) then
+            perform insert into produkPPI
+            select inkdwilayah,chkdda,chkdsite,chkp from
+            (select distinct inkdwilayah,chkdda,chkdsite from customer) a
+            cross join (select distinct chkp from ppi_mitem) b
+            where inkdwilayah in (select wil from wilayah)
+            ;
+        end if;
+    end if;
+
+    if vposisi in (0) then
+        if vdepolp in (0,1) then
+            perform insert into produkPPI
+            select inkdwilayah,chkdda,chkdsite,chkp from
+            (select distinct inkdwilayah,chkdda,chkdsite from customer) a
+            cross join (select distinct chkp from ppi_mitem) b
+            where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
+            ;
+        end if;
+
+        if vdepolp in (2) then
+            perform insert into produkPPI
+            select inkdwilayah,chkdda,chkdsite,chkp from
+            (select distinct inkdwilayah,chkdda,chkdsite from customer) a
+            cross join (select distinct chkp from ppi_mitem) b
+            where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
+            ;
+        end if;
+    end if;
+
+    /*
+     ** Tipe Omset Classification (tipeoms) **
+     ** 0: insentif achieve sales vs target tahun lalu
+     ** 2: insentif achieve sales vs target tahun & bulan berjalan
+     ** continue here...
+     */
+
 --     perform create local temporary table if not exists prelistlt
 --     (
 --         tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),
