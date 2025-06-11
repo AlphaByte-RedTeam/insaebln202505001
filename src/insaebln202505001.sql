@@ -1,20 +1,20 @@
 create or replace procedure RPT_insaebln202505001
 (
     vnama varchar(512),
-	vlokasi varchar(255),
-	vwilayah varchar(255),
-	vemployee varchar(255),
-	vtipeperiode int,
-	vtahun int,
-	vperiode int,
-	vposisi int,
-	vtt int,
-	vuser varchar(255),
-	vreqkey varchar(255),
-	vdate varchar(255),
-	nomorsurat int,
-	vdepolp int,
-	vtxt int
+    vlokasi varchar(255),
+    vwilayah varchar(255),
+    vemployee varchar(255),
+    vtipeperiode int,
+    vtahun int,
+    vperiode int,
+    vposisi int,
+    vtt int,
+    vuser varchar(255),
+    vreqkey varchar(255),
+    vdate varchar(255),
+    nomorsurat int,
+    vdepolp int,
+    vtxt int
 ) language PLvSQL as $$
 
 declare
@@ -279,37 +279,28 @@ if 1=1 then
     from tempomsetkp
     ;
 
---     perform create local temporary table if not exists tempomsetkpglobal
---     (
---         inkdwilayah int,chkdemployee varchar(255),
---         deQtyNettoThLalu dec(25,6),deRpNettoThLalu dec(25,6),deQtyNettoCurr dec(25,6),deRpNettoCurr dec(25,6),
---         percentQtyNetto dec(25,6),percentRpNetto dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into tempomsetkpglobal
---     select inkdwilayah,chkdemployee,null,null,null,null,
---     sum(case when (deQtyNettoThLalu <= 0) or (deQtyNettoCurr <= 0) then 0 else deQtyNettoCurr/deQtyNettoThLalu end) percentQtyNetto,
---     sum(case when (deRpNettoThLalu <= 0) or (deRpNettoCurr <= 0) then 0 else deRpNettoCurr/deRpNettoThLalu end) percentRpNetto
---     from (
---         select inkdwilayah,chkdemployee,
---         sum(deQtyNettoThLalu) deQtyNettoThLalu,
---         sum(deRpNettoThLalu) deRpNettoThLalu,
---         sum(deQtyNettoCurr) deQtyNettoCurr,
---         sum(deRpNettoCurr) deRpNettoCurr
---         from (
---             select inkdwilayah,chkdemployee,chkdcustomer,
---             sum(case when tipeoms in (0) then deQtyNetto end) deQtyNettoThLalu,
---             sum(case when tipeoms in (0) then deRpNetto end) deRpNettoThLalu,
---             sum(case when tipeoms in (2) then deQtyNetto end) deQtyNettoCurr,
---             sum(case when tipeoms in (2) then deRpNetto end) deRpNettoCurr
---             from prelistlt where tipeoms in (0,2)
---             group by inkdwilayah,chkdemployee,chkdcustomer
---         ) a
---         group by inkdwilayah,chkdemployee
---     ) a
---     group by inkdwilayah,chkdemployee
---     ;
---
+    perform create local temporary table if not exists tempomsetkpglobal
+    (
+        inkdwilayah int,chkdemployee varchar(255),
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),
+        percentQtyNetto dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into tempomsetkpglobal
+    select inkdwilayah1,chkdemployee,
+    isnull(deQtyTarget,0) qtyTarget,isnull(deQtyOmset,0) qtyOmset,isnull(deRpOmset,0) rpOmset,
+    sum(case when (qtyTarget <= 0) or (deQtyOmset <= 0) then 0 else deQtyOmset/qtyTarget end) percentQtyNetto
+    from (
+        select case when tipeoms in (2) then inkdwilayah end inkdwilayah1,chkdemployee,
+        sum(case when tipeoms in (0) then isnull(deQtyNetto,0) end) deQtyTarget,
+        sum(case when tipeoms in (2) then isnull(deQtyNetto,0) end) deQtyOmset,
+        sum(case when tipeoms in (2) then isnull(deRpNetto,0) end) deRpOmset
+        from prelistlt where tipeoms in (0,2)
+        group by tipeoms,inkdwilayah,chkdemployee
+    ) a
+    group by inkdwilayah1,chkdemployee,deQtyTarget,deQtyOmset,deRpOmset
+    ;
+
 --     perform create local temporary table if not exists insomsetkpglobal
 --     (
 --         inkdwilayah int,chkdemployee varchar(255),chkdcustomer varchar(255),
