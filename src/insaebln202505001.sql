@@ -350,14 +350,39 @@ if 1=1 then
     from tempomsetkpglobal
     ;
 
---     perform create local temporary table if not exists listlt
---     (
---         inkdwilayah int,chkdemployee varchar(255),chkdcustomer varchar(255)
---     ) on commit preserve rows;
---
---     perform insert into listlt
---     select inkdwilayah,chkdemployee,chkdcustomer
---     from prelistlt;
+    perform create local temporary table if not exists listlt
+    (
+        inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),chkdda varchar(255),chkdcustomer varchar(255),
+        deRpOmset dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into listlt
+    select inkdwilayah,a.chkdsite,chkdemployee,a.chkdda,chkdcustomer,
+    isnull(deRpOmset,0) rpOmset
+    from (
+        select distinct chkdda,chkdsite from customer
+    ) a
+    left join (
+        select inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,
+        sum(isnull(deRpNetto,0)) deRpOmset
+        from prelistlt
+        where tipeoms in (2)
+        group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer
+    ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
+    group by inkdwilayah,a.chkdsite,chkdemployee,a.chkdda,chkdcustomer,deRpOmset
+    ;
+
+-- tambahin inhitungins
+    perform create local temporary table if not exists tempinsentiflt
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),inJumlahLT int
+    ) on commit preserve rows;
+
+    perform insert into tempinsentiflt
+    select inkdwilayah,chkdemployee,chkdda,case when isnull(deRpOmset,0) >= 500000 then count(distinct chkdcustomer) end inJumlahLT
+    from listlt
+    group by inkdwilayah,chkdemployee,chkdda,deRpOmset
+    ;
 
 end if;
 end;
