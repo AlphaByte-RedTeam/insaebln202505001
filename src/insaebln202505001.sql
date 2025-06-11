@@ -301,24 +301,24 @@ if 1=1 then
     group by inkdwilayah1,chkdemployee,deQtyTarget,deQtyOmset,deRpOmset
     ;
 
---     perform create local temporary table if not exists insomsetkpglobal
---     (
---         inkdwilayah int,chkdemployee varchar(255),chkdcustomer varchar(255),
---         totalins dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into insomsetkpglobal
---     select inkdwilayah,chkdemployee,chkdcustomer,
---     case
---         when isnull(percentQtyNetto,0) < 0.80 then 0
---         when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpNettoCurr,0)
---         when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpNettoCurr,0)
---         when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpNettoCurr,0)
---         else 0
---     end totalins
---     from tempomsetkp
---     ;
---
+    perform create local temporary table if not exists insomsetkpglobal
+    (
+        inkdwilayah int,chkdemployee varchar(255),
+        totalins dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insomsetkpglobal
+    select inkdwilayah,chkdemployee,
+    case
+        when isnull(percentQtyNetto,0) < 0.80 then 0
+        when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpOmset,0)
+        when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpOmset,0)
+        when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpOmset,0)
+        else 0
+    end totalins
+    from tempomsetkpglobal
+    ;
+
 --     perform create local temporary table if not exists listlt
 --     (
 --         tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255)
