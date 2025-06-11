@@ -38,6 +38,8 @@ declare
     vEntity varchar(50);
     ketTeam varchar(50);
 
+    stdInsCA int;
+
 begin
 if 1=1 then
     vEntity := SELECT chvalue FROM lp_mreportfilter WHERE chkey = 'db';
@@ -67,6 +69,8 @@ if 1=1 then
         when vtipeperiode = 2	then 'AAM'
         when vtipeperiode = 3	then 'RBM'
     end;
+
+    stdInsCA := 120 * 0.8;
 
     datglawal := select min(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
     datglakhir := select max(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
@@ -375,13 +379,18 @@ if 1=1 then
 -- tambahin inhitungins
     perform create local temporary table if not exists tempinsentiflt
     (
-        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),inJumlahLT int
+        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),inJumlahLT int,inHitungInsLT int
     ) on commit preserve rows;
 
     perform insert into tempinsentiflt
-    select inkdwilayah,chkdemployee,chkdda,case when isnull(deRpOmset,0) >= 500000 then count(distinct chkdcustomer) end inJumlahLT
+    select inkdwilayah,chkdemployee,chkdda,
+    count(distinct case when isnull(deRpOmset,0) >= 500000 then chkdcustomer end) inJumlahLT,
+    case
+        when injumlahlt >= stdInsCA then 1
+        else 0
+    end inHitungInsLT
     from listlt
-    group by inkdwilayah,chkdemployee,chkdda,deRpOmset
+    group by inkdwilayah,chkdemployee,chkdda
     ;
 
 end if;
