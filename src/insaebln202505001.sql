@@ -136,7 +136,7 @@ if 1=1 then
                 select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
                 from lp_mda a
                 inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chjabatan = 'AE'
+                where chJabatan in (vketemployee)
             ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             ;
@@ -151,7 +151,7 @@ if 1=1 then
                 select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
                 from lp_mda_aarta a
                 inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chjabatan = 'AE'
+                where chJabatan in (vketemployee)
             ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             ;
@@ -168,7 +168,7 @@ if 1=1 then
                 select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
                 from lp_mda_history a
                 inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chjabatan = 'AE'
+                where chJabatan in (vketemployee)
             ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             and intahun = vtahunhistory and inbulan = vbulanhistory
@@ -184,7 +184,7 @@ if 1=1 then
                 select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,chNama chNamaEmp
                 from lp_mda_aarta_history a
                 inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chjabatan = 'AE'
+                where chJabatan in (vketemployee)
             ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
             where cust.inkdwilayah in (select wil from wilayah)
             and intahun = vtahunhistory and inbulan = vbulanhistory
@@ -194,29 +194,41 @@ if 1=1 then
 
     /*
      ** Tipe Omset Classification (tipeoms) **
-     ** 0: insentif achieve sales vs target tahun lalu
-     ** 2: insentif achieve sales vs target tahun & bulan berjalan
+     ** 0: target with KP
+     ** 1: target without KP
+     ** 2: omset KP
      ** continue here...
      */
 
     perform create local temporary table if not exists prelistlt
     (
-        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),chkp varchar(255),
+        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),chkdsite varchar(255),
+        chkdcustomer varchar(255),chTipeKp varchar(255),chkp varchar(255),
         deQtyNetto dec(25,6),deRpNetto dec(25,6)
     ) on commit preserve rows;
 
     perform insert into prelistlt
-    select 0 tipeoms,null,null,null,null,chketproduk chkp,deTarget deQtyTarget,null
+    select 0 tipeoms,null,null,null,null,null,chproduk chTipeKp,chketproduk chkp,deTarget deQtyTarget,null
     from (
-        select chketproduk,deTarget
+        select chketproduk,deTarget,chproduk
         from PPI_mInsTargetLoad
-        where chjabatan = 'AE' and chproduk in ('KP','T')
+        where chJabatan in (vketemployee) and chproduk in ('KP')
         and intahun = vtahun and inbulan = vbulan
     ) a
     ;
 
     perform insert into prelistlt
-    select 2 tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkp,
+    select 1 tipeoms,null,null,null,null,null,chproduk chTipeKp,null,deTarget deQtyTarget,null
+    from (
+        select deTarget,chproduk
+        from PPI_mInsTargetLoad
+        where chJabatan in (vketemployee) and chproduk in ('T')
+        and intahun = vtahun and inbulan = vbulan
+    ) a
+    ;
+
+    perform insert into prelistlt
+    select 2 tipeoms,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,null,chkp,
     sum(deqtynetto) deqtynetto,sum(derpnetto) derpnetto
     from (
         select product_key,customer_key,deqtynetto,derpnetto
@@ -225,7 +237,7 @@ if 1=1 then
         where intahun = vtahun and inbulan = 1 --inbulan = vbulan
     ) a
     inner join (
-        select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
+        select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkdda
         from customer
         where inkdwilayah in (select wil from wilayah)
     ) b on a.customer_key = b.customer_key
@@ -233,42 +245,53 @@ if 1=1 then
         select product_key,chkp
         from produkPPI
     ) c on a.product_key = c.product_key
-    group by inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkp
+    group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,chkp
     ;
 
--- cross join dengan produkPPI
     -- tempomsetkp:
     -- untuk mencari persentase per KP
     perform create local temporary table if not exists tempomsetkp
     (
-        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
+        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdda varchar(255),
         deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),
         percentQtyNetto dec(25,6)
     ) on commit preserve rows;
 
     perform insert into tempomsetkp
-    select inkdwilayah1,chkdemployee,chkp,chkdcustomer,
+    select inkdwilayah,chkdemployee,a.chkp,a.chkdda,
     isnull(deQtyTarget,0) qtyTarget,isnull(deQtyOmset,0) qtyOmset,isnull(deRpOmset,0) rpOmset,
-    sum(case when (qtyTarget <= 0) or (deQtyOmset <= 0) then 0 else deQtyOmset/qtyTarget end) percentQtyNetto
+    sum(case when (qtyTarget <= 0) or (qtyOmset <= 0) then 0 else qtyOmset/qtyTarget end) percentQtyNetto
     from (
-        select case when tipeoms in (2) then inkdwilayah end inkdwilayah1,chkdemployee,chkp,chkdcustomer,
-        sum(case when tipeoms in (0) then isnull(deQtyNetto,0) end) deQtyTarget,
-        sum(case when tipeoms in (2) then isnull(deQtyNetto,0) end) deQtyOmset,
-        sum(case when tipeoms in (2) then isnull(deRpNetto,0) end) deRpOmset
-        from prelistlt where tipeoms in (0,2)
-        group by tipeoms,inkdwilayah,chkdemployee,chkdcustomer,chkp
+        select distinct chkdda,chkdsite,chkp
+        from (select distinct chkdda,chkdsite from customer) a
+        cross join (select distinct chkp from produkPPI) b
     ) a
-    group by inkdwilayah1,chkdemployee,chkdcustomer,chkp,deQtyTarget,deQtyOmset,deRpOmset
+    left join (
+        select inkdwilayah,chkdemployee,chkdda,chkdsite,chkp,
+        sum(isnull(deQtyNetto,0)) deQtyOmset,
+        sum(isnull(deRpNetto,0)) deRpOmset
+        from prelistlt
+        where tipeoms in (2)
+        group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkp
+    ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite and a.chkp = b.chkp
+    left join (
+        select chkp,
+        sum(isnull(deQtyNetto,0)) deQtyTarget
+        from prelistlt
+        where tipeoms in (0) and chTipeKp in ('KP')
+        group by chkp
+    ) c on a.chkp = c.chkp
+    group by inkdwilayah,chkdemployee,a.chkp,a.chkdda,deQtyTarget,deQtyOmset,deRpOmset
     ;
 
     perform create local temporary table if not exists insomsetkp
     (
-        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),chkdcustomer varchar(255),
+        inkdwilayah int,chkdemployee varchar(255),chkp varchar(255),
         tarifins dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkp
-    select inkdwilayah,chkdemployee,chkp,chkdcustomer,
+    select inkdwilayah,chkdemployee,chkp,
     case
         when isnull(percentQtyNetto,0) < 0.80 then 0
         when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpOmset,0)
@@ -287,45 +310,53 @@ if 1=1 then
     ) on commit preserve rows;
 
     perform insert into tempomsetkpglobal
-    select inkdwilayah1,chkdemployee,
-    isnull(deQtyTarget,0) qtyTarget,isnull(deQtyOmset,0) qtyOmset,isnull(deRpOmset,0) rpOmset,
-    sum(case when (qtyTarget <= 0) or (deQtyOmset <= 0) then 0 else deQtyOmset/qtyTarget end) percentQtyNetto
-    from (
-        select case when tipeoms in (2) then inkdwilayah end inkdwilayah1,chkdemployee,
-        sum(case when tipeoms in (0) then isnull(deQtyNetto,0) end) deQtyTarget,
-        sum(case when tipeoms in (2) then isnull(deQtyNetto,0) end) deQtyOmset,
-        sum(case when tipeoms in (2) then isnull(deRpNetto,0) end) deRpOmset
-        from prelistlt where tipeoms in (0,2)
-        group by tipeoms,inkdwilayah,chkdemployee
-    ) a
-    group by inkdwilayah1,chkdemployee,deQtyTarget,deQtyOmset,deRpOmset
-    ;
-
-    perform create local temporary table if not exists insomsetkpglobal
-    (
-        inkdwilayah int,chkdemployee varchar(255),
-        totalins dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into insomsetkpglobal
     select inkdwilayah,chkdemployee,
-    case
-        when isnull(percentQtyNetto,0) < 0.80 then 0
-        when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpOmset,0)
-        when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpOmset,0)
-        when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpOmset,0)
-        else 0
-    end totalins
-    from tempomsetkpglobal
+    isnull(deQtyTarget,0) qtyTarget,isnull(deQtyOmset,0) qtyOmset,isnull(deRpOmset,0) rpOmset,
+    sum(case when (qtyTarget <= 0) or (qtyOmset <= 0) then 0 else qtyOmset/qtyTarget end) percentQtyNetto
+    from (
+        select distinct chkdda,chkdsite from customer
+    ) a
+    left join (
+        select inkdwilayah,chkdemployee,chkdda,chkdsite,
+        sum(isnull(deQtyNetto,0)) deQtyOmset,
+        sum(isnull(deRpNetto,0)) deRpOmset
+        from prelistlt
+        where tipeoms in (2)
+        group by inkdwilayah,chkdemployee,chkdda,chkdsite
+    ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
+    cross join (
+        select sum(isnull(deQtyNetto,0)) deQtyTarget
+        from prelistlt
+        where tipeoms in (1)
+    ) c
+    group by inkdwilayah,chkdemployee,deQtyTarget,deQtyOmset,deRpOmset
     ;
 
+--     perform create local temporary table if not exists insomsetkpglobal
+--     (
+--         inkdwilayah int,chkdemployee varchar(255),
+--         totalins dec(25,6)
+--     ) on commit preserve rows;
+--
+--     perform insert into insomsetkpglobal
+--     select inkdwilayah,chkdemployee,
+--     case
+--         when isnull(percentQtyNetto,0) < 0.80 then 0
+--         when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpOmset,0)
+--         when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpOmset,0)
+--         when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpOmset,0)
+--         else 0
+--     end totalins
+--     from tempomsetkpglobal
+--     ;
+--
 --     perform create local temporary table if not exists listlt
 --     (
---         tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255)
+--         inkdwilayah int,chkdemployee varchar(255),chkdcustomer varchar(255)
 --     ) on commit preserve rows;
 --
 --     perform insert into listlt
---     select tipeoms,inkdwilayah,chkdemployee,chkdsite,chkdcustomer
+--     select inkdwilayah,chkdemployee,chkdcustomer
 --     from prelistlt;
 
 end if;
