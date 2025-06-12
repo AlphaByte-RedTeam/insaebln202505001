@@ -453,15 +453,54 @@ if 1=1 then
     perform create local temporary table if not exists hitungsyaratbayar
     (
         inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),chkdda varchar(255),
-        deTarget dec(25,6),deReal dec(25,6),dePrestasiTagih dec(25,6)
+        deTarget dec(25,6),deReal dec(25,6),dePercentTagih dec(25,6)
     ) on commit preserve rows;
 
     perform insert into hitungsyaratbayar
     select inkdwilayah,chkdsite,chkdemployee,chkdda,
     sum(deTarget) deTarget1,sum(deReal) deReal1,
-    case when isnull(deTarget1,0) <= 0 or isnull(deReal1,0) <= 0 then 0 else (deReal1 / deTarget1) end percentPrestag
+    case when isnull(deTarget1,0) <= 0 or isnull(deReal1,0) <= 0 then 0 else (deReal1 / deTarget1) end dePercentTagih
     from piutangbulanan
     group by inkdwilayah,chkdsite,chkdemployee,chkdda
+    ;
+
+    perform create local temporary table if not exists insentiffinal
+    (
+        inkdwilayah int,chkdemployee varchar(255),deTotalInsentif dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insentiffinal
+    select a.inkdwilayah,a.chkdemployee,
+    case
+        when pctTagih < 0.80 then 0
+        when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80 * totalInsFinal
+        when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90 * totalInsFinal
+        when pctTagih >= 0.95 then 0.80 * totalInsFinal
+    end deTotalInsFinal
+    from (
+        select a.inkdwilayah,a.chkdemployee,
+        sum(isnull(totalInsKp,0) + isnull(totalInsKpGlobal,0) + isnull(totalInsLT,0) + isnull(totalInsLB,0)) totalInsFinal
+        from (
+            select inkdwilayah,chkdemployee from customer
+        ) a
+        left join (
+            select inkdwilayah,chkdemployee,isnull(tarifins,0) totalInsKp from insomsetkp
+        ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+        left join (
+            select inkdwilayah,chkdemployee,isnull(totalins,0) totalInsKpGlobal from insomsetkpglobal
+        ) c on a.inkdwilayah = c.inkdwilayah and a.chkdemployee = c.chkdemployee
+        left join (
+            select inkdwilayah,chkdemployee,isnull(totalIns,0) totalInsLT from insentifLT
+        ) d on a.inkdwilayah = d.inkdwilayah and a.chkdemployee = d.chkdemployee
+        left join (
+            select inkdwilayah,chkdemployee,isnull(totalInsLB,0) totalInsLB from insentifLB
+        ) e on a.inkdwilayah = e.inkdwilayah and a.chkdemployee = e.chkdemployee
+        group by a.inkdwilayah,a.chkdemployee
+    ) a
+    left join (
+        select inkdwilayah,chkdemployee,isnull(dePercentTagih,0) pctTagih from hitungsyaratbayar
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+    group by a.inkdwilayah,a.chkdemployee
     ;
 
 end if;
