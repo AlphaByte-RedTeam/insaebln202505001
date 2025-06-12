@@ -481,24 +481,29 @@ if 1=1 then
         select a.inkdwilayah,a.chkdemployee,
         sum(isnull(totalInsKp,0) + isnull(totalInsKpGlobal,0) + isnull(totalInsLT,0) + isnull(totalInsLB,0)) totalInsFinal
         from (
-            select inkdwilayah,chkdemployee from customer
+            select distinct inkdwilayah,chkdemployee from customer
         ) a
         left join (
-            select inkdwilayah,chkdemployee,isnull(tarifins,0) totalInsKp from insomsetkp
+            select inkdwilayah,chkdemployee,sum(isnull(tarifins,0)) totalInsKp from insomsetkp
+            group by inkdwilayah,chkdemployee
         ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
         left join (
-            select inkdwilayah,chkdemployee,isnull(totalins,0) totalInsKpGlobal from insomsetkpglobal
+            select inkdwilayah,chkdemployee,sum(isnull(totalins,0)) totalInsKpGlobal from insomsetkpglobal
+            group by inkdwilayah,chkdemployee
         ) c on a.inkdwilayah = c.inkdwilayah and a.chkdemployee = c.chkdemployee
         left join (
-            select inkdwilayah,chkdemployee,isnull(totalIns,0) totalInsLT from insentifLT
+            select inkdwilayah,chkdemployee,sum(isnull(totalIns,0)) totalInsLT from insentifLT
+            group by inkdwilayah,chkdemployee
         ) d on a.inkdwilayah = d.inkdwilayah and a.chkdemployee = d.chkdemployee
         left join (
-            select inkdwilayah,chkdemployee,isnull(totalInsLB,0) totalInsLB from insentifLB
+            select inkdwilayah,chkdemployee,sum(isnull(totalInsLB,0)) totalInsLB from insentifLB
+            group by inkdwilayah,chkdemployee
         ) e on a.inkdwilayah = e.inkdwilayah and a.chkdemployee = e.chkdemployee
         group by a.inkdwilayah,a.chkdemployee
     ) a
     left join (
-        select inkdwilayah,chkdemployee,isnull(dePercentTagih,0) pctTagih from hitungsyaratbayar
+        select inkdwilayah,chkdemployee,sum(isnull(dePercentTagih,0)) pctTagih from hitungsyaratbayar
+        group by inkdwilayah,chkdemployee
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     group by a.inkdwilayah,a.chkdemployee
     ;
