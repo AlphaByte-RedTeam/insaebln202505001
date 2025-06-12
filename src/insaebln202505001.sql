@@ -380,14 +380,15 @@ if 1=1 then
     perform create local temporary table if not exists tempinsentiflt
     (
         inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
-        deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6)
+        deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalIns dec(25,6)
     ) on commit preserve rows;
 
     perform insert into tempinsentiflt
     select inkdwilayah,chkdemployee,chkdda,
     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
-    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up
+    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+    (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
     from (
         select inkdwilayah,chkdemployee,chkdda,
         count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
