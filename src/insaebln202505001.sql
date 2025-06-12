@@ -39,6 +39,7 @@ declare
     ketTeam varchar(50);
 
     stdInsCA int;
+    maxdate date;
 
 begin
 if 1=1 then
@@ -71,6 +72,8 @@ if 1=1 then
     end;
 
     stdInsCA := 120 * 0.8;
+
+    maxdate := select max(datglcutoff) from lp_tpiutang where year(datglcutoff) = vtahun and month(datglcutoff) = vbulan;
 
     datglawal := select min(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
     datglakhir := select max(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
@@ -426,6 +429,25 @@ if 1=1 then
         group by inkdwilayah,chkdemployee,chkdda
     ) a
     group by inkdwilayah,chkdemployee,chkdda
+    ;
+
+    -- Syarat Prestasi Tagih
+    perform create local temporary table if not exists piutangbulanan
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdda varchar(255),chkdcustomer varchar(255),
+        deNilaiFaktur dec(25,6),chnofaktur varchar(255),datgljt date,deTarget dec(25,6),deReal dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into piutangbulanan
+    select inkdwilayah,chkdemployee,chkdsite,chkdda,chkdcustomer,
+    sum(deNilaiFaktur) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
+    sum(deTargetMonth) deTarget,sum(deBayarMonth) deReal
+    from lp_tpiutang a
+    inner join (
+        select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdda,chkdcustomer from customer
+    ) b on a.customer_key = b.customer_key
+    where datglcutoff = maxdate and a.customer_key in (select customer_key from customer)
+    group by inkdwilayah,chkdemployee,chkdsite,chkdda,chkdcustomer,chnofaktur1,datgljt
     ;
 
 end if;
