@@ -379,17 +379,24 @@ if 1=1 then
 -- tambahin inhitungins
     perform create local temporary table if not exists tempinsentiflt
     (
-        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),inJumlahLT int,inHitungInsLT int
+        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
+        deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6)
     ) on commit preserve rows;
 
     perform insert into tempinsentiflt
     select inkdwilayah,chkdemployee,chkdda,
-    count(distinct case when isnull(deRpOmset,0) >= 500000 then chkdcustomer end) inJumlahLT,
-    case
-        when injumlahlt >= stdInsCA then 1
-        else 0
-    end inHitungInsLT
-    from listlt
+    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up
+    from (
+        select inkdwilayah,chkdemployee,chkdda,
+        count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+        count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+        count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+        (inlt50010 + inlt1050 + inlt50up) inJumlahLT
+        from listlt
+        group by inkdwilayah,chkdemployee,chkdda
+    ) a
     group by inkdwilayah,chkdemployee,chkdda
     ;
 
