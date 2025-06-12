@@ -476,6 +476,7 @@ if 1=1 then
         when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80 * totalInsFinal
         when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90 * totalInsFinal
         when pctTagih >= 0.95 then 0.80 * totalInsFinal
+        else 0
     end deTotalInsFinal
     from (
         select a.inkdwilayah,a.chkdemployee,
@@ -505,7 +506,6 @@ if 1=1 then
         select inkdwilayah,chkdemployee,sum(isnull(dePercentTagih,0)) pctTagih from hitungsyaratbayar
         group by inkdwilayah,chkdemployee
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-    group by a.inkdwilayah,a.chkdemployee
     ;
 
 end if;
