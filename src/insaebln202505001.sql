@@ -41,11 +41,22 @@ declare
     stdInsCA int;
     maxdate date;
 
+    vPath varchar(255);
+    mysetdir varchar(255);
+    vnmfile2 varchar(255);
+    vfile2 varchar(255);
+
 begin
 if 1=1 then
     vEntity := SELECT chvalue FROM lp_mreportfilter WHERE chkey = 'db';
 
     nosurat := '180-ARTA-SDKP_AB2-XI-2024'; -- TODO: Change the nomor surat later
+
+    MySetDir := '/dwh/'||vEntity||'/report/rutin/insentif/insaebln202505001/'||vnama||'.csv';
+
+    vPath := SUBSTR(MySetDir,1,INSTR(MySetDir, '/', -1)-1);
+    vnmfile2 := vPath||'/'||vuser||'-Loadins-1-'||vreqkey||'-'||vdate||'.txt';
+    vFile2 := REPLACE(SUBSTR(vnmfile2,INSTR(vnmfile2, '/', -1)+1),'.txt','');
 
     waktusaatini := select now();
 
@@ -209,13 +220,13 @@ if 1=1 then
 
     perform create local temporary table if not exists prelistlt
     (
-        tipeoms int,inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),chkdsite varchar(255),
+        tipeoms int,intahun int,inbulan int,inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),chkdsite varchar(255),
         chkdcustomer varchar(255),chTipeKp varchar(255),chkp varchar(255),inTahunTrx int,inBulanTrx int,
-        deQtyNetto dec(25,6),deRpNetto dec(25,6)
+        deQtyNetto dec(25,6),deRpNetto dec(25,6),loCustomerBaru boolean
     ) on commit preserve rows;
 
     perform insert into prelistlt
-    select 0 tipeoms,null,null,null,null,null,chproduk chTipeKp,chketproduk chkp,null,null,deTarget deQtyTarget,null
+    select 0 tipeoms,null,null,null,null,null,null,null,chproduk chTipeKp,chketproduk chkp,null,null,deTarget deQtyTarget,null,null
     from (
         select chketproduk,deTarget,chproduk
         from PPI_mInsTargetLoad
@@ -225,7 +236,7 @@ if 1=1 then
     ;
 
     perform insert into prelistlt
-    select 1 tipeoms,null,null,null,null,null,chproduk chTipeKp,null,null,null,deTarget deQtyTarget,null
+    select 1 tipeoms,null,null,null,null,null,null,null,chproduk chTipeKp,null,null,null,deTarget deQtyTarget,null,null
     from (
         select deTarget,chproduk
         from PPI_mInsTargetLoad
@@ -235,10 +246,11 @@ if 1=1 then
     ;
 
     perform insert into prelistlt
-    select 2 tipeoms,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,null,chkp,intahuntrx,inbulantrx,
-    sum(deqtynetto) deqtynetto,sum(derpnetto) derpnetto
+    select 2 tipeoms,intahun,inbulan,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,null,chkp,intahuntrx,inbulantrx,
+    sum(deqtynetto) deqtynetto,sum(derpnetto) derpnetto,
+    case when inTahunTrx = inTahun and inBulanTrx = inBulan then 1 else 0 end loCustomerBaru
     from (
-        select product_key,customer_key,deqtynetto,derpnetto
+        select product_key,customer_key,deqtynetto,derpnetto,intahun,inbulan
         from dm_tjual_mon
         -- TODO: use hardcoded value in inBulan for testing purpose, change later
         where intahun = vtahun and inbulan = 1 --inbulan = vbulan
@@ -253,8 +265,7 @@ if 1=1 then
         select product_key,chkp
         from produkPPI
     ) c on a.product_key = c.product_key
-    where inTahunTrx in (vtahun) and inBulanTrx in (1)
-    group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,chkp,intahuntrx,inbulantrx
+    group by intahun,inbulan,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,chkp,intahuntrx,inbulantrx,loCustomerBaru
     ;
 
     -- tempomsetkp:
@@ -507,6 +518,25 @@ if 1=1 then
         group by inkdwilayah,chkdemployee
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
+
+    perform create local temporary table if not exists vinsrekap2
+    (
+        chnosurat varchar(255),intipe int,intahun int,inbulan int,inperiode int,inpekan int,inkdwilayah int,inkdcabang int,
+        inkddepo int,chkdsite varchar(255),inkdtypeins int,chkettypeins varchar(255),chempid varchar(255),chketemp varchar(255),
+        chkdcustomer varchar(255),locustomerbaru boolean,chkp varchar(255),chnofaktur varchar(255),datgljt date,
+        deqtynetto dec(25,6),derpnetto dec(25,6),detarget dec(25,6),dereal dec(25,6)
+    ) on commit preserve rows;
+
+--     perform insert into vinsrekap2
+--     select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,
+--     inkddepo,chkdsite,vtipeperiode,vketemployee,chkdemployee,chnamaemp,
+--     chkdcustomer,
+--     from (
+--         select distinct * from customer
+--     ) a
+--     left join (
+--         select
+--     ) b on
 
 end if;
 end;
