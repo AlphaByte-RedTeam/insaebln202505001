@@ -221,7 +221,7 @@ if 1=1 then
     perform create local temporary table if not exists prelistlt
     (
         tipeoms int,intahun int,inbulan int,inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),chkdsite varchar(255),
-        chkdcustomer varchar(255),chTipeKp varchar(255),chkp varchar(255),inTahunTrx int,inBulanTrx int,
+        chkdcustomer varchar(255),chTipeKp varchar(255),chkp varchar(255),inTahunMulaiTrx int,inBulanMulaiTrx int,
         deQtyNetto dec(25,6),deRpNetto dec(25,6),loCustomerBaru boolean
     ) on commit preserve rows;
 
@@ -246,18 +246,17 @@ if 1=1 then
     ;
 
     perform insert into prelistlt
-    select 2 tipeoms,intahun,inbulan,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,null,chkp,intahuntrx,inbulantrx,
+    select 2 tipeoms,intahun,inbulan,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,null,chkp,inTahunMulaiTrx,inBulanMulaiTrx,
     sum(deqtynetto) deqtynetto,sum(derpnetto) derpnetto,
-    case when inTahunTrx = inTahun and inBulanTrx = inBulan then 1 else 0 end loCustomerBaru
+    case when inTahunMulaiTrx = inTahun and inBulanMulaiTrx = inBulan then 1 else 0 end loCustomerBaru
     from (
         select product_key,customer_key,deqtynetto,derpnetto,intahun,inbulan
         from dm_tjual_mon
-        -- TODO: use hardcoded value in inBulan for testing purpose, change later
-        where intahun = vtahun and inbulan = 1 --inbulan = vbulan
+        where intahun = vtahun and inbulan = vbulan
     ) a
     inner join (
         select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chkdda,
-        year(datglmulaitransaksi::date) inTahunTrx,month(datglmulaitransaksi::date)inBulanTrx
+        year(datglmulaitransaksi::date) inTahunMulaiTrx,month(datglmulaitransaksi::date)inBulanMulaiTrx
         from customer
         where inkdwilayah in (select wil from wilayah)
     ) b on a.customer_key = b.customer_key
@@ -265,7 +264,7 @@ if 1=1 then
         select product_key,chkp
         from produkPPI
     ) c on a.product_key = c.product_key
-    group by intahun,inbulan,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,chkp,intahuntrx,inbulantrx,loCustomerBaru
+    group by intahun,inbulan,inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,chkp,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
     ;
 
     -- tempomsetkp:
@@ -278,12 +277,12 @@ if 1=1 then
     ) on commit preserve rows;
 
     perform insert into tempomsetkp
-    select inkdwilayah,chkdemployee,a.chkp,a.chkdda,
+    select a.inkdwilayah,a.chkdemployee,a.chkp,a.chkdda,
     isnull(deQtyTarget,0) qtyTarget,isnull(deQtyOmset,0) qtyOmset,isnull(deRpOmset,0) rpOmset,
     sum(case when (qtyTarget <= 0) or (qtyOmset <= 0) then 0 else qtyOmset/qtyTarget end) percentQtyNetto
     from (
-        select distinct chkdda,chkdsite,chkp
-        from (select distinct chkdda,chkdsite from customer) a
+        select distinct inkdwilayah,chkdemployee,chkdda,chkdsite,chkp
+        from (select distinct inkdwilayah,chkdda,chkdsite,chkdemployee from customer) a
         cross join (select distinct chkp from produkPPI) b
     ) a
     left join (
@@ -293,7 +292,8 @@ if 1=1 then
         from prelistlt
         where tipeoms in (2)
         group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkp
-    ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite and a.chkp = b.chkp
+    ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite and a.chkp = b.chkp and a.inkdwilayah = b.inkdwilayah
+    and a.chkdemployee = b.chkdemployee
     left join (
         select chkp,
         sum(isnull(deQtyNetto,0)) deQtyTarget
@@ -301,7 +301,7 @@ if 1=1 then
         where tipeoms in (0) and chTipeKp in ('KP')
         group by chkp
     ) c on a.chkp = c.chkp
-    group by inkdwilayah,chkdemployee,a.chkp,a.chkdda,deQtyTarget,deQtyOmset,deRpOmset
+    group by a.inkdwilayah,a.chkdemployee,a.chkp,a.chkdda,deQtyTarget,deQtyOmset,deRpOmset
     ;
 
     perform create local temporary table if not exists insomsetkp
@@ -373,25 +373,25 @@ if 1=1 then
     perform create local temporary table if not exists listlt
     (
         inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),chkdda varchar(255),chkdcustomer varchar(255),
-        inTahunTrx int,inBulanTrx int,
+        inTahunMulaiTrx int,inBulanMulaiTrx int,loCustomerBaru boolean,
         deRpOmset dec(25,6)
     ) on commit preserve rows;
 
     perform insert into listlt
     select inkdwilayah,a.chkdsite,chkdemployee,a.chkdda,chkdcustomer,
-    inTahunTrx,inBulanTrx,
+    inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru,
     isnull(deRpOmset,0) rpOmset
     from (
         select distinct chkdda,chkdsite from customer
     ) a
     left join (
-        select inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,inTahunTrx,inBulanTrx,
+        select inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru,
         sum(isnull(deRpNetto,0)) deRpOmset
         from prelistlt
         where tipeoms in (2)
-        group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,inTahunTrx,inBulanTrx
+        group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
     ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
-    group by inkdwilayah,a.chkdsite,chkdemployee,a.chkdda,chkdcustomer,inTahunTrx,inBulanTrx,deRpOmset
+    group by inkdwilayah,a.chkdsite,chkdemployee,a.chkdda,chkdcustomer,inTahunMulaiTrx,inBulanMulaiTrx,deRpOmset,locustomerbaru
     ;
 
     perform create local temporary table if not exists insentiflt
@@ -432,9 +432,9 @@ if 1=1 then
     (deTarifLB0106 + deTarifLB0610 + deTarifLB10up) totalInsLb
     from (
         select inkdwilayah,chkdemployee,chkdda,
-        count(distinct case when inTahunTrx = vtahun and inBulanTrx = vbulan and isnull(deRpOmset,0) >= 1000000 and isnull(derpomset,0) < 6000000  then chkdcustomer end) inlb0106,
-        count(distinct case when inTahunTrx = vtahun and inBulanTrx = vbulan and isnull(deRpOmset,0) >= 6000000 and isnull(derpomset,0) <= 10000000 then chkdcustomer end) inlb0610,
-        count(distinct case when inTahunTrx = vtahun and inBulanTrx = vbulan and isnull(deRpOmset,0) >  10000000 then chkdcustomer end) inlb10up,
+        count(distinct case when inTahunMulaiTrx = vtahun and inBulanMulaiTrx = vbulan and isnull(deRpOmset,0) >= 1000000 and isnull(derpomset,0) < 6000000  then chkdcustomer end) inlb0106,
+        count(distinct case when inTahunMulaiTrx = vtahun and inBulanMulaiTrx = vbulan and isnull(deRpOmset,0) >= 6000000 and isnull(derpomset,0) <= 10000000 then chkdcustomer end) inlb0610,
+        count(distinct case when inTahunMulaiTrx = vtahun and inBulanMulaiTrx = vbulan and isnull(deRpOmset,0) >  10000000 then chkdcustomer end) inlb10up,
         (inlb0106 + inlb0610 + inlb10up) inJumlahLB
         from listlt
         group by inkdwilayah,chkdemployee,chkdda
@@ -529,8 +529,8 @@ if 1=1 then
 
 --     perform insert into vinsrekap2
 --     select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,
---     inkddepo,chkdsite,vtipeperiode,vketemployee,chkdemployee,chnamaemp,
---     chkdcustomer,
+--     inkddepo,chkdsite,vtipeperiode,vketemployee,chkdemployee chempid,chnamaemp chketemp,
+--     chkdcustomer,loCustomerBaru
 --     from (
 --         select distinct * from customer
 --     ) a
