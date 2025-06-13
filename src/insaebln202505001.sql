@@ -231,7 +231,7 @@ if 1=1 then
         select chketproduk,deTarget,chproduk
         from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('KP')
-        and intahun = vtahun and inbulan = vbulan
+        and intahun = vtahun and inbulan = vbulan and inkdwilayah in (select wil from inkdwilayah)
     ) a
     ;
 
@@ -241,7 +241,7 @@ if 1=1 then
         select deTarget,chproduk
         from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('T')
-        and intahun = vtahun and inbulan = vbulan
+        and intahun = vtahun and inbulan = vbulan and inkdwilayah in (select wil from inkdwilayah)
     ) a
     ;
 
