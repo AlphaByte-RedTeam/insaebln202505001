@@ -571,6 +571,17 @@ if 1=1 then
     ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
     ;
 
+    perform insert into list_detail
+    select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,substring(chkdsite,3,2)::int inkdcabang,
+    substring(chkdsite,5,2)::int inkddepo,chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    null chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
+    null deQtyTarget,null deQtyOmset,detarget,dereal
+    from piutangbulanan a
+    left join (
+        select chkdemployee,chnamaemp from customer
+    ) b on a.chkdemployee = b.chkdemployee
+    ;
+
 end if;
 end;
 $$
