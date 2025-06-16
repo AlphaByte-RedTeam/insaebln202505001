@@ -437,6 +437,7 @@ if 1=1 then
         count(distinct case when inTahunMulaiTrx = vtahun and inBulanMulaiTrx = vbulan and isnull(deRpOmset,0) >  10000000 then chkdcustomer end) inlb10up,
         (inlb0106 + inlb0610 + inlb10up) inJumlahLB
         from listlt
+        where loCustomerBaru = true
         group by inkdwilayah,chkdemployee,chkdda
     ) a
     group by inkdwilayah,chkdemployee,chkdda
