@@ -316,11 +316,11 @@ if 1=1 then
     perform create local temporary table if not exists insomsetkp
     (
         inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),chkp varchar(255),
-        deQtyOmset dec(25,6),deRpOmset dec(25,6),tarifins dec(25,6)
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),tarifins dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkp
-    select inkdwilayah,chkdsite,chkdemployee,chkp,deQtyOmset,deRpOmset,
+    select inkdwilayah,chkdsite,chkdemployee,chkp,deQtyTarget,deQtyOmset,deRpOmset,
     case
         when isnull(percentQtyNetto,0) < 0.80 then 0
         when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpOmset,0)
@@ -538,11 +538,31 @@ if 1=1 then
     ) on commit preserve rows;
     -- targetQTY,omsetQTY,omsetRP,null
 
+    /**
+        * tipe ins classification
+        * 0: Omset KP + LT without target
+        * 1: Omset KP only with Target
+        * 2: Prestasi Tagih
+    */
     perform insert into list_detail
     select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,inkdcabang,
     inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
     null deTargetQty,deQtyOmset deQtyNetto,deRpOmset deRpNetto,null deReal
+    from (
+       select * from insomsetkp
+    ) a
+    left join (
+        select * from prelistlt where inTipeOms in (2)
+    ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
+    ;
+
+    -- TODO: add target + omset kp --> filteran di prelistlt
+    perform insert into list_detail
+    select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,inkdcabang,
+    inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    null chkdcustomer,null loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
+    deQtyTarget,deQtyOmset deQtyNetto,deRpOmset deRpNetto,null deReal
     from (
        select * from insomsetkp
     ) a
