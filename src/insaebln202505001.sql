@@ -160,11 +160,10 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer cust
             inner join (
-                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
-                from lp_mda a
-                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chJabatan in (vketemployee)
-            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+                from del_PPI_mInsDALoad
+                where chJabatan in (vketemployee) and chDivisi in ('B2B')
+            ) emp on cust.chkdda = emp.chkdda
             where cust.inkdwilayah in (select wil from wilayah)
             ;
         end if;
@@ -173,13 +172,12 @@ if 1=1 then
             perform insert into customer
             select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
-            from lp_mcustomer cust
+            from lp_mcustomer_aarta cust
             inner join (
-                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
-                from lp_mda_aarta a
-                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chJabatan in (vketemployee)
-            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+                from del_PPI_mInsDALoad
+                where chJabatan in (vketemployee) and chDivisi in ('B2B')
+            ) emp on cust.chkdda = emp.chkdda
             where cust.inkdwilayah in (select wil from wilayah)
             ;
         end if;
@@ -192,11 +190,10 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_history cust
             inner join (
-                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
-                from lp_mda_history a
-                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chJabatan in (vketemployee)
-            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+                from del_PPI_mInsDALoad
+                where chJabatan in (vketemployee) and chDivisi in ('B2B')
+            ) emp on cust.chkdda = emp.chkdda
             where cust.inkdwilayah in (select wil from wilayah)
             and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
@@ -208,11 +205,10 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_aarta_history cust
             inner join (
-                select distinct a.chkdda,chkdsite,'9'||substring(chkdemployee,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
-                from lp_mda_aarta_history a
-                inner join PPI_mInsDaLoad b on a.chkdda = b.chkdda
-                where chJabatan in (vketemployee)
-            ) emp on cust.chkdda = emp.chkdda and cust.chkdsite = emp.chkdsite
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+                from del_PPI_mInsDALoad
+                where chJabatan in (vketemployee) and chDivisi in ('B2B')
+            ) emp on cust.chkdda = emp.chkdda
             where cust.inkdwilayah in (select wil from wilayah)
             and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
@@ -245,7 +241,7 @@ if 1=1 then
         from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('KP')
         -- TODO: change hardcoded value to use variable
-        and intahun = vtahun and inbulan = 5 and inkdwil in (13)
+        and intahun = vtahun and inbulan = 5 and inkdwil in (select wil from wilayah)
     ) a
     ;
 
@@ -259,7 +255,7 @@ if 1=1 then
         from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('T')
         -- TODO: change hardcoded value to use variable
-        and intahun = vtahun and inbulan = 5 and inkdwil in (13)
+        and intahun = vtahun and inbulan = 5 and inkdwil in (select wil from wilayah)
     ) a
     ;
 
@@ -272,7 +268,7 @@ if 1=1 then
         select product_key,customer_key,deqtynetto,derpnetto,intahun,inbulan
         from dm_tjual_mon
         -- TODO: change hardcoded value to use variable
-        where intahun = vtahun and inbulan = 1
+        where intahun = vtahun and inbulan = vbulan
     ) a
     inner join (
         select customer_key,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,chkdsite,chkdcustomer,chNamaCustomer,
@@ -613,6 +609,7 @@ if 1=1 then
     totalIns deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deReal
     from (
+        -- omset per kp
         select (vtipeperiode||600)::int inkdins,a.inkdwilayah,a.chkdsite,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdda,
         a.chkdemployee,chnamaemp,sum(tarifins) totalIns
         from insomsetkp a
@@ -623,6 +620,20 @@ if 1=1 then
         ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
         group by a.inkdwilayah,a.chkdsite,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdda,
         a.chkdemployee,chnamaemp
+
+--         union all
+--
+--         -- omset kp global
+--         select (vtipeperiode||601)::int inkdins,a.inkdwilayah,a.chkdsite,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdda,
+--         a.chkdemployee,chnamaemp,sum(tarifins) totalIns
+--         from insomsetkpglobal a
+--         left join (
+--             select chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdda,chkdemployee,
+--             chnamaemp
+--             from customer
+--         ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
+--         group by a.inkdwilayah,a.chkdsite,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdda,
+--         a.chkdemployee,chnamaemp
     ) a
     ;
 
@@ -631,5 +642,5 @@ end;
 $$
 
 -- NOTE: Testing pakai call SP berikut:
--- AE, wil 1, thn 2025, bln 1
--- call RPT_insaebln202505001 ('insaebln202505001-Andrew_mai-'||replace(TO_CHAR(CURRENT_TIMESTAMP,'YYYYMMDD-HH24:MI:SS'),':','')||'-testing.csv','wilayah','01','ALL',2,2025,1,1,0,'Andrew_mai','testing',TO_CHAR(CURRENT_TIMESTAMP,'DD-MM-YYYY-HH24:MI:SS'),1,0,0);
+-- AE, wil 1, thn 2025, bln 6
+-- call RPT_insaebln202505001 ('insaebln202505001-Andrew_mai-'||replace(TO_CHAR(CURRENT_TIMESTAMP,'YYYYMMDD-HH24:MI:SS'),':','')||'-testing.csv','wilayah','01','ALL',2,2025,6,1,0,'Andrew_mai','testing',TO_CHAR(CURRENT_TIMESTAMP,'DD-MM-YYYY-HH24:MI:SS'),1,0,0);
