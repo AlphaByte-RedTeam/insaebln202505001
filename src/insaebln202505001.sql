@@ -49,11 +49,13 @@ declare
 
     vinstagihan int;
 
+    errCode VARCHAR(255);
+
 begin
 if 1=1 then
     vEntity := SELECT chvalue FROM lp_mreportfilter WHERE chkey = 'db';
 
-    nosurat := '180-ARTA-SDKP_AB2-XI-2024'; -- TODO: Change the nomor surat later
+    nosurat := '001-CEO-PPI-V-25'; -- TODO: Change the nomor surat later
 
     MySetDir := '/dwh/'||vEntity||'/report/rutin/insentif/insaebln202505001/'||vnama||'.csv';
 
@@ -603,6 +605,42 @@ if 1=1 then
     ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
     ;
 
+    perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
+
+    begin
+        errCode := '00000';
+        perform delete from PPI_tInsTrxDetil
+        where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
+        and inkdtypeins = vtipeperiode
+        ;
+
+        perform insert into PPI_tInsTrxDetil
+        (
+            chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+            inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+            chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+            deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+        )
+        select chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+        inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+        chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+        deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+        from list_detail
+        ;
+
+        EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS errCode := RETURNED_SQLSTATE;
+    end;
+
+    if errCode <> '00000' then
+        perform rollback;
+        perform call SPS_Ins_Loging(1,'INSPPI',0,'Failed RPT_insaebln2025050001'||waktusaatini,errCode);
+    else
+        perform commit;
+        perform call SPS_Ins_Loging(1,'INSPPI',0,'Success RPT_insaebln2025050001'||waktusaatini,errCode);
+    end if;
+
+    perform call SPS_Ins_Loging(1,'INSPPI',0,'End Insert RPT_insaebln2025050001'||waktusaatini,'00000');
+
     perform create local temporary table if not exists vinsrekap
     (
         chkdsite varchar(255),inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),inkddepo int,chketdepo varchar(255),
@@ -651,6 +689,7 @@ end if;
 end;
 $$
 -- TODO: remove comment from vposisi last (0)
+-- TODO: change table with del_ to regular table
 
 -- NOTE: Testing pakai call SP berikut:
 -- AE, wil 1, thn 2025, bln 6
