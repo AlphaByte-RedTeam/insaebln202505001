@@ -561,20 +561,25 @@ if 1=1 then
     null deTargetQty,deQtyNetto,deRpNetto,null deReal,
     vuser,waktusaatini,chNamaCustomer chketcustomer
     from (
-        select * from prelistlt where inTipeOms in (2)
+        select chkdsite,inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,locustomerbaru,
+        chkp,deQtyOmset deQtyNetto,deRpOmset deRpNetto,chnamacustomer
+        from listlt
     ) a
+    inner join (
+       select chkdsite,inkdcabang,inkddepo,chkdemployee from customer
+    ) b on a.chkdsite = b.chkdsite and a.chkdemployee = b.chkdemployee
     ;
 
-    perform insert into list_detail
-    select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,
-    inkddepo,chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    null chkdcustomer,null loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
-    deQtyNetto deTargetQty,null deQtyNetto,null deRpNetto,null deReal,
-    vuser,waktusaatini,chNamaCustomer chketcustomer
-    from (
-        select * from prelistlt where inTipeOms in (0)
-    ) a
-    ;
+--     perform insert into list_detail
+--     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,
+--     inkddepo,chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+--     null chkdcustomer,null loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
+--     deQtyNetto deTargetQty,null deQtyNetto,null deRpNetto,null deReal,
+--     vuser,waktusaatini,chNamaCustomer chketcustomer
+--     from (
+--         select * from prelistlt where inTipeOms in (0)
+--     ) a
+--     ;
 
     perform insert into list_detail
     select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,inkddepo,a.chkdsite,
