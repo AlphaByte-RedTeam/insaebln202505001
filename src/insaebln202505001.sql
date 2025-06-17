@@ -164,7 +164,7 @@ if 1=1 then
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
             ) emp on cust.chkdda = emp.chkdda
-            where cust.inkdwilayah in (select wil from wilayah)
+            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
             ;
         end if;
 
@@ -178,7 +178,7 @@ if 1=1 then
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
             ) emp on cust.chkdda = emp.chkdda
-            where cust.inkdwilayah in (select wil from wilayah)
+            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
             ;
         end if;
     end if;
@@ -194,7 +194,7 @@ if 1=1 then
 --                 from del_PPI_mInsDALoad
 --                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
 --             ) emp on cust.chkdda = emp.chkdda
---             where cust.inkdwilayah in (select wil from wilayah)
+--             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
 --             and intahun = vtahunhistory and inbulan = vbulanhistory
 --             ;
 --         end if;
@@ -209,7 +209,7 @@ if 1=1 then
 --                 from del_PPI_mInsDALoad
 --                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
 --             ) emp on cust.chkdda = emp.chkdda
---             where cust.inkdwilayah in (select wil from wilayah)
+--             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
 --             and intahun = vtahunhistory and inbulan = vbulanhistory
 --             ;
 --         end if;
@@ -392,30 +392,24 @@ if 1=1 then
     ) a
     ;
 
---     perform create local temporary table if not exists listlt
---     (
---         inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),chkdda varchar(255),chkdcustomer varchar(255),
---         inTahunMulaiTrx int,inBulanMulaiTrx int,loCustomerBaru boolean,
---         deRpOmset dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into listlt
---     select inkdwilayah,a.chkdsite,chkdemployee,a.chkdda,chkdcustomer,
---     inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru,
---     isnull(deRpOmset,0) rpOmset
---     from (
---         select distinct chkdda,chkdsite from customer
---     ) a
---     left join (
---         select inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru,
---         sum(isnull(deRpNetto,0)) deRpOmset
---         from prelistlt
---         where inTipeOms in (2)
---         group by inkdwilayah,chkdemployee,chkdda,chkdsite,chkdcustomer,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
---     ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
---     group by inkdwilayah,a.chkdsite,chkdemployee,a.chkdda,chkdcustomer,inTahunMulaiTrx,inBulanMulaiTrx,deRpOmset,locustomerbaru
---     ;
---
+    perform create local temporary table if not exists listlt
+    (
+        chkdsite varchar(255),inkdwilayah int,chkdemployee varchar(255),chnamaemp varchar(255),
+        chkdda varchar(255),chkdcustomer varchar(255),chnamacustomer varchar(255),chkp varchar(255),
+        inTahunMulaiTrx int,inBulanMulaiTrx int,loCustomerBaru boolean,
+        deQtyOmset dec(25,6),deRpOmset dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into listlt
+    select chkdsite,inkdwilayah,chkdemployee,chnamaemp,max(chkdda) chkdda,chkdcustomer,chnamacustomer,
+    chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru,
+    sum(deQtyNetto) deQtyOmset,sum(deRpNetto) deRpOmset
+    from prelistlt
+    where inTipeOms in (2)
+    group by chkdsite,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer,
+    chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru
+    ;
+
 --     perform create local temporary table if not exists insentiflt
 --     (
 --         inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
