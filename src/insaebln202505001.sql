@@ -467,20 +467,21 @@ if 1=1 then
     -- Syarat Prestasi Tagih
     perform create local temporary table if not exists piutangbulanan
     (
-        inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),
+        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),chkdsite varchar(255),
+        chkdcustomer varchar(255),chnamacustomer varchar(255),
         deNilaiFaktur dec(25,6),chnofaktur varchar(255),datgljt date,deTarget dec(25,6),deReal dec(25,6)
     ) on commit preserve rows;
 
     perform insert into piutangbulanan
-    select inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
+    select inkdwilayah,chkdemployee,chnamaemp,chkdsite,chkdcustomer,chnamacustomer,
     sum(deNilaiFaktur) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
     sum(deTargetMonth) deTarget,sum(deBayarMonth) deReal
     from lp_tpiutang a
     inner join (
-        select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdcustomer from customer
+        select customer_key,inkdwilayah,chkdemployee,chnamaemp,chkdsite,chkdcustomer,chnamacustomer from customer
     ) b on a.customer_key = b.customer_key
     where datglcutoff = maxdate and a.customer_key in (select customer_key from customer)
-    group by inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chnofaktur1,datgljt
+    group by inkdwilayah,chkdemployee,chnamaemp,chkdsite,chkdcustomer,chnamacustomer,chnofaktur1,datgljt
     ;
 
     perform create local temporary table if not exists hitungsyaratbayar
@@ -595,52 +596,49 @@ if 1=1 then
     ;
 
     perform insert into list_detail
-    select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,inkddepo,a.chkdsite,
-    vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    null chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
+    select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,null inkdcabang,null inkddepo,chkdsite,
+    vtipeperiode,vketemployee,chkdemployee chempid,chnamaemployee chketemp,
+    chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
     null deQtyTarget,null deQtyOmset,detarget,dereal,
     vuser,waktusaatini,chNamaCustomer chketcustomer
-    from piutangbulanan a
-    left join (
-        select distinct chkdemployee,chnamaemp,inkdcabang,inkddepo,chkdsite,chnamacustomer from customer
-    ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
+    from piutangbulanan
     ;
 
-    perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
-
-    begin
-        errCode := '00000';
-        perform delete from PPI_tInsTrxDetil
-        where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
-        and inkdtypeins = vtipeperiode
-        ;
-
-        perform insert into PPI_tInsTrxDetil
-        (
-            chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
-            inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
-            chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
-            deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
-        )
-        select chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
-        inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
-        chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
-        deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
-        from list_detail
-        ;
-
-        EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS errCode := RETURNED_SQLSTATE;
-    end;
-
-    if errCode <> '00000' then
-        perform rollback;
-        perform call SPS_Ins_Loging(1,'INSPPI',0,'Failed RPT_insaebln2025050001'||waktusaatini,errCode);
-    else
-        perform commit;
-        perform call SPS_Ins_Loging(1,'INSPPI',0,'Success RPT_insaebln2025050001'||waktusaatini,errCode);
-    end if;
-
-    perform call SPS_Ins_Loging(1,'INSPPI',0,'End Insert RPT_insaebln2025050001'||waktusaatini,'00000');
+--     perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
+--
+--     begin
+--         errCode := '00000';
+--         perform delete from PPI_tInsTrxDetil
+--         where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
+--         and inkdtypeins = vtipeperiode
+--         ;
+--
+--         perform insert into PPI_tInsTrxDetil
+--         (
+--             chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+--             inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+--             chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+--             deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+--         )
+--         select chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+--         inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+--         chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+--         deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+--         from list_detail
+--         ;
+--
+--         EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS errCode := RETURNED_SQLSTATE;
+--     end;
+--
+--     if errCode <> '00000' then
+--         perform rollback;
+--         perform call SPS_Ins_Loging(1,'INSPPI',0,'Failed RPT_insaebln2025050001'||waktusaatini,errCode);
+--     else
+--         perform commit;
+--         perform call SPS_Ins_Loging(1,'INSPPI',0,'Success RPT_insaebln2025050001'||waktusaatini,errCode);
+--     end if;
+--
+--     perform call SPS_Ins_Loging(1,'INSPPI',0,'End Insert RPT_insaebln2025050001'||waktusaatini,'00000');
 
     perform create local temporary table if not exists vinsrekap
     (
