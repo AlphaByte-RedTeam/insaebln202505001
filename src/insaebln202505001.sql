@@ -397,13 +397,13 @@ if 1=1 then
     perform create local temporary table if not exists listlt
     (
         chkdsite varchar(255),inkdwilayah int,chkdemployee varchar(255),chnamaemp varchar(255),
-        chkdda varchar(255),chkdcustomer varchar(255),chnamacustomer varchar(255),chkp varchar(255),
+        chkdcustomer varchar(255),chnamacustomer varchar(255),chkp varchar(255),
         inTahunMulaiTrx int,inBulanMulaiTrx int,loCustomerBaru boolean,
         deQtyOmset dec(25,6),deRpOmset dec(25,6)
     ) on commit preserve rows;
 
     perform insert into listlt
-    select chkdsite,inkdwilayah,chkdemployee,chnamaemp,max(chkdda) chkdda,chkdcustomer,chnamacustomer,
+    select chkdsite,inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer,
     chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru,
     sum(deQtyNetto) deQtyOmset,sum(deRpNetto) deRpOmset
     from prelistlt
@@ -414,26 +414,26 @@ if 1=1 then
 
     perform create local temporary table if not exists insentiflt
     (
-        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
+        inkdwilayah int,chkdemployee varchar(255),
         deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalIns dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insentiflt
-    select inkdwilayah,chkdemployee,chkdda,
+    select inkdwilayah,chkdemployee,
     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
     (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
     from (
-        select inkdwilayah,chkdemployee,chkdda,
+        select inkdwilayah,chkdemployee,
         count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
         count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
         count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
         (inlt50010 + inlt1050 + inlt50up) inJumlahLT
         from listlt
-        group by inkdwilayah,chkdemployee,chkdda
+        group by inkdwilayah,chkdemployee
     ) a
-    group by inkdwilayah,chkdemployee,chkdda
+    group by inkdwilayah,chkdemployee
     ;
 
     perform create local temporary table if not exists insentiflb
@@ -443,22 +443,22 @@ if 1=1 then
     ) on commit preserve rows;
 
     perform insert into insentiflb
-    select inkdwilayah,chkdemployee,chkdda,
+    select inkdwilayah,chkdemployee,
     sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0106,0) * 10000::dec(25,6) else 0 end) deTarifLB0106,
     sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0610,0) * 20000::dec(25,6) else 0 end) deTarifLB0610,
     sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb10up,0) * 50000::dec(25,6) else 0 end) deTarifLB10up,
     (deTarifLB0106 + deTarifLB0610 + deTarifLB10up) totalInsLb
     from (
-        select inkdwilayah,chkdemployee,chkdda,
+        select inkdwilayah,chkdemployee,
         count(distinct case when isnull(deRpOmset,0) >= 1000000 and isnull(derpomset,0) < 6000000  then chkdcustomer end) inlb0106,
         count(distinct case when isnull(deRpOmset,0) >= 6000000 and isnull(derpomset,0) <= 10000000 then chkdcustomer end) inlb0610,
         count(distinct case when isnull(deRpOmset,0) >  10000000 then chkdcustomer end) inlb10up,
         (inlb0106 + inlb0610 + inlb10up) inJumlahLB
         from listlt
         where loCustomerBaru = true
-        group by inkdwilayah,chkdemployee,chkdda
+        group by inkdwilayah,chkdemployee
     ) a
-    group by inkdwilayah,chkdemployee,chkdda
+    group by inkdwilayah,chkdemployee
     ;
 
     -- Syarat Prestasi Tagih
@@ -555,8 +555,8 @@ if 1=1 then
         * 2: Prestasi Tagih
     */
     perform insert into list_detail
-    select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,inkdcabang,
-    inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
+    null inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
     null deTargetQty,deQtyNetto,deRpNetto,null deReal,
     vuser,waktusaatini,chNamaCustomer chketcustomer
@@ -565,21 +565,19 @@ if 1=1 then
         chkp,deQtyOmset deQtyNetto,deRpOmset deRpNetto,chnamacustomer
         from listlt
     ) a
-    inner join (
-       select chkdsite,inkdcabang,inkddepo,chkdemployee from customer
-    ) b on a.chkdsite = b.chkdsite and a.chkdemployee = b.chkdemployee
     ;
 
---     perform insert into list_detail
---     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,
---     inkddepo,chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
---     null chkdcustomer,null loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
---     deQtyNetto deTargetQty,null deQtyNetto,null deRpNetto,null deReal,
---     vuser,waktusaatini,chNamaCustomer chketcustomer
---     from (
---         select * from prelistlt where inTipeOms in (0)
---     ) a
---     ;
+    perform insert into list_detail
+    select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
+    null inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
+    deqtytarget deTargetQty,a.deqtyomset deQtyNetto,a.derpomset deRpNetto,null deReal,
+    vuser,waktusaatini,chNamaCustomer chketcustomer
+    from insomsetkp a
+    left join (
+        select distinct * from listlt
+    ) b on a.chkdemployee = b.chkdemployee
+    ;
 
     perform insert into list_detail
     select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,inkddepo,a.chkdsite,
