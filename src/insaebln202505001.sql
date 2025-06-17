@@ -480,20 +480,20 @@ if 1=1 then
     group by inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chnofaktur1,datgljt
     ;
 
---     perform create local temporary table if not exists hitungsyaratbayar
---     (
---         inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),chkdda varchar(255),
---         deTarget dec(25,6),deReal dec(25,6),dePercentTagih dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into hitungsyaratbayar
---     select inkdwilayah,chkdsite,chkdemployee,chkdda,
---     sum(deTarget) deTarget1,sum(deReal) deReal1,
---     case when isnull(deTarget1,0) <= 0 or isnull(deReal1,0) <= 0 then 0 else (deReal1 / deTarget1) end dePercentTagih
---     from piutangbulanan
---     group by inkdwilayah,chkdsite,chkdemployee,chkdda
---     ;
---
+    perform create local temporary table if not exists hitungsyaratbayar
+    (
+        inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),
+        deTarget dec(25,6),deReal dec(25,6),dePercentTagih dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into hitungsyaratbayar
+    select inkdwilayah,chkdsite,chkdemployee,
+    sum(deTarget) deTarget1,sum(deReal) deReal1,
+    case when isnull(deTarget1,0) <= 0 or isnull(deReal1,0) <= 0 then 0 else (deReal1 / deTarget1) end dePercentTagih
+    from piutangbulanan
+    group by inkdwilayah,chkdsite,chkdemployee
+    ;
+
 --     perform create local temporary table if not exists insentiffinal
 --     (
 --         inkdwilayah int,chkdemployee varchar(255),deTotalInsentif dec(25,6)
