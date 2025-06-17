@@ -538,64 +538,64 @@ if 1=1 then
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
---     perform create local temporary table if not exists list_detail
---     (
---         chnosurat varchar(255),intipe int,intahun int,inbulan int,inperiode int,inpekan int,inkdwilayah int,inkdcabang int,
---         inkddepo int,chkdsite varchar(255),inkdtypeins int,chkettypeins varchar(255),chempid varchar(255),chketemp varchar(255),
---         chkdcustomer varchar(255),locustomerbaru boolean,chkp varchar(255),chnofaktur varchar(255),datgljt date,
---         deqtynetto dec(25,6),derpnetto dec(25,6),detarget dec(25,6),dereal dec(25,6),
---         chusercreated varchar(255),dacreated date,chketcustomer varchar(255)
---     ) on commit preserve rows;
---     -- targetQTY,omsetQTY,omsetRP,null
---
---     /**
---         * tipe ins classification
---         * 0: Omset KP + LT without target
---         * 1: Omset KP only with Target
---         * 2: Prestasi Tagih
---     */
---     perform insert into list_detail
---     select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,inkdcabang,
---     inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
---     chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
---     null deTargetQty,deQtyNetto,deRpNetto,null deReal,
---     vuser,waktusaatini,chNamaCustomer chketcustomer
---     from (
---         select * from prelistlt where inTipeOms in (2)
---     ) a
---     ;
---
---     perform insert into list_detail
---     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,
---     inkddepo,chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
---     null chkdcustomer,null loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
---     deQtyNetto deTargetQty,null deQtyNetto,null deRpNetto,null deReal,
---     vuser,waktusaatini,chNamaCustomer chketcustomer
---     from (
---         select * from prelistlt where inTipeOms in (0)
---     ) a
---     ;
+    perform create local temporary table if not exists list_detail
+    (
+        chnosurat varchar(255),intipe int,intahun int,inbulan int,inperiode int,inpekan int,inkdwilayah int,inkdcabang int,
+        inkddepo int,chkdsite varchar(255),inkdtypeins int,chkettypeins varchar(255),chempid varchar(255),chketemp varchar(255),
+        chkdcustomer varchar(255),locustomerbaru boolean,chkp varchar(255),chnofaktur varchar(255),datgljt date,
+        deqtynetto dec(25,6),derpnetto dec(25,6),detarget dec(25,6),dereal dec(25,6),
+        chusercreated varchar(255),dacreated date,chketcustomer varchar(255)
+    ) on commit preserve rows;
+    -- targetQTY,omsetQTY,omsetRP,null
 
---     perform insert into list_detail
---     select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,inkddepo,a.chkdsite,
---     vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
---     null chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
---     null deQtyTarget,null deQtyOmset,detarget,dereal,
---     vuser,waktusaatini,chNamaCustomer chketcustomer
---     from piutangbulanan a
---     left join (
---         select chkdemployee,chnamaemp,inkdcabang,inkddepo,chkdsite,chnamacustomer from customer
---     ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
---     ;
---
---     perform create local temporary table if not exists vinsrekap
---     (
---         chkdsite varchar(255),inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),inkddepo int,chketdepo varchar(255),
---         inTahun int,inperiode int,inpekan int,inpekantahun int,inbulan int,inkdtypeins int,inkdins int,
---         chkdda varchar(255),chkdemployee varchar(255),chketda varchar(255),chketemployee varchar(255),
---         deinsentif dec(25,6),chnosurat varchar(255),locurrent int,inkdteamda int,chusercreated varchar(255),dacreated datetime,intgl int,deinshangus dec(25,6)
---     ) on commit preserve rows;
---
+    /**
+        * tipe ins classification
+        * 0: Omset KP + LT without target
+        * 1: Omset KP only with Target
+        * 2: Prestasi Tagih
+    */
+    perform insert into list_detail
+    select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,inkdcabang,
+    inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
+    null deTargetQty,deQtyNetto,deRpNetto,null deReal,
+    vuser,waktusaatini,chNamaCustomer chketcustomer
+    from (
+        select * from prelistlt where inTipeOms in (2)
+    ) a
+    ;
+
+    perform insert into list_detail
+    select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,
+    inkddepo,chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    null chkdcustomer,null loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
+    deQtyNetto deTargetQty,null deQtyNetto,null deRpNetto,null deReal,
+    vuser,waktusaatini,chNamaCustomer chketcustomer
+    from (
+        select * from prelistlt where inTipeOms in (0)
+    ) a
+    ;
+
+    perform insert into list_detail
+    select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,inkdcabang,inkddepo,a.chkdsite,
+    vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    null chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
+    null deQtyTarget,null deQtyOmset,detarget,dereal,
+    vuser,waktusaatini,chNamaCustomer chketcustomer
+    from piutangbulanan a
+    left join (
+        select chkdemployee,chnamaemp,inkdcabang,inkddepo,chkdsite,chnamacustomer from customer
+    ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
+    ;
+
+    perform create local temporary table if not exists vinsrekap
+    (
+        chkdsite varchar(255),inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),inkddepo int,chketdepo varchar(255),
+        inTahun int,inperiode int,inpekan int,inpekantahun int,inbulan int,inkdtypeins int,inkdins int,
+        chkdda varchar(255),chkdemployee varchar(255),chketda varchar(255),chketemployee varchar(255),
+        deinsentif dec(25,6),chnosurat varchar(255),locurrent int,inkdteamda int,chusercreated varchar(255),dacreated datetime,intgl int,deinshangus dec(25,6)
+    ) on commit preserve rows;
+
 --     -- original value
 --     perform insert into vinsrekap
 --     select chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,
