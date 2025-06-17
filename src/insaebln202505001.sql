@@ -570,12 +570,24 @@ if 1=1 then
     perform insert into list_detail
     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
-    deqtytarget deTargetQty,a.deqtyomset deQtyNetto,a.derpomset deRpNetto,null deReal,
-    vuser,waktusaatini,chNamaCustomer chketcustomer
+    null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
+    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,null deReal,
+    vuser,waktusaatini,null chketcustomer
     from insomsetkp a
-    left join (
-        select distinct * from listlt
+    inner join (
+        select distinct chnamaemp,chkdemployee from customer
+    ) b on a.chkdemployee = b.chkdemployee
+    ;
+
+    perform insert into list_detail
+    select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
+    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    null chkdcustomer,null loCustomerBaru,'T-GLOBAL' chkp,null chnofaktur,null datgljt,
+    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,null deReal,
+    vuser,waktusaatini,null chketcustomer
+    from insomsetkpglobal a
+    inner join (
+        select distinct chnamaemp,chkdemployee from customer
     ) b on a.chkdemployee = b.chkdemployee
     ;
 
@@ -618,7 +630,7 @@ if 1=1 then
 --         ) b on a.chkdemployee = b.chkdemployee and a.chkdsite = b.chkdsite
 --         group by a.inkdwilayah,a.chkdsite,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdda,
 --         a.chkdemployee,chnamaemp
-
+--
 --         union all
 --
 --         -- omset kp global
