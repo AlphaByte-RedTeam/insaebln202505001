@@ -461,25 +461,25 @@ if 1=1 then
     group by inkdwilayah,chkdemployee,chkdda
     ;
 
---     -- Syarat Prestasi Tagih
---     perform create local temporary table if not exists piutangbulanan
---     (
---         inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdda varchar(255),chkdcustomer varchar(255),
---         deNilaiFaktur dec(25,6),chnofaktur varchar(255),datgljt date,deTarget dec(25,6),deReal dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into piutangbulanan
---     select inkdwilayah,chkdemployee,chkdsite,chkdda,chkdcustomer,
---     sum(deNilaiFaktur) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
---     sum(deTargetMonth) deTarget,sum(deBayarMonth) deReal
---     from lp_tpiutang a
---     inner join (
---         select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdda,chkdcustomer from customer
---     ) b on a.customer_key = b.customer_key
---     where datglcutoff = maxdate and a.customer_key in (select customer_key from customer)
---     group by inkdwilayah,chkdemployee,chkdsite,chkdda,chkdcustomer,chnofaktur1,datgljt
---     ;
---
+    -- Syarat Prestasi Tagih
+    perform create local temporary table if not exists piutangbulanan
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),
+        deNilaiFaktur dec(25,6),chnofaktur varchar(255),datgljt date,deTarget dec(25,6),deReal dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into piutangbulanan
+    select inkdwilayah,chkdemployee,chkdsite,chkdcustomer,
+    sum(deNilaiFaktur) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
+    sum(deTargetMonth) deTarget,sum(deBayarMonth) deReal
+    from lp_tpiutang a
+    inner join (
+        select customer_key,inkdwilayah,chkdemployee,chkdsite,chkdcustomer from customer
+    ) b on a.customer_key = b.customer_key
+    where datglcutoff = maxdate and a.customer_key in (select customer_key from customer)
+    group by inkdwilayah,chkdemployee,chkdsite,chkdcustomer,chnofaktur1,datgljt
+    ;
+
 --     perform create local temporary table if not exists hitungsyaratbayar
 --     (
 --         inkdwilayah int,chkdsite varchar(255),chkdemployee varchar(255),chkdda varchar(255),
