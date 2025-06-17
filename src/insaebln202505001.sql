@@ -39,6 +39,7 @@ declare
     ketTeam varchar(50);
 
     stdInsCA int;
+    stdInsNOC int;
     maxdate date;
 
     vPath varchar(255);
@@ -85,6 +86,7 @@ if 1=1 then
     end;
 
     stdInsCA := 120 * 0.8;
+    stdInsNOC := 10;
 
     maxdate := select max(datglcutoff) from lp_tpiutang where year(datglcutoff) = vtahun and month(datglcutoff) = vbulan;
 
@@ -410,55 +412,55 @@ if 1=1 then
     chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru
     ;
 
---     perform create local temporary table if not exists insentiflt
---     (
---         inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
---         deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalIns dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into insentiflt
---     select inkdwilayah,chkdemployee,chkdda,
---     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
---     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
---     sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
---     (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
---     from (
---         select inkdwilayah,chkdemployee,chkdda,
---         count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
---         count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
---         count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
---         (inlt50010 + inlt1050 + inlt50up) inJumlahLT
---         from listlt
---         group by inkdwilayah,chkdemployee,chkdda
---     ) a
---     group by inkdwilayah,chkdemployee,chkdda
---     ;
---
---     perform create local temporary table if not exists insentiflb
---     (
---         inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
---         deTarifLB0106 dec(25,6),deTarifLB0610 dec(25,6),deTarifLB10up dec(25,6),totalInsLB dec(25,6)
---     ) on commit preserve rows;
---
---     perform insert into insentiflb
---     select inkdwilayah,chkdemployee,chkdda,
---     sum(case when isnull(inJumlahLB,0) >= 10 then isnull(inlb0106,0) * 10000::dec(25,6) else 0 end) deTarifLB0106,
---     sum(case when isnull(inJumlahLB,0) >= 10 then isnull(inlb0610,0) * 20000::dec(25,6) else 0 end) deTarifLB0610,
---     sum(case when isnull(inJumlahLB,0) >= 10 then isnull(inlb10up,0) * 50000::dec(25,6) else 0 end) deTarifLB10up,
---     (deTarifLB0106 + deTarifLB0610 + deTarifLB10up) totalInsLb
---     from (
---         select inkdwilayah,chkdemployee,chkdda,
---         count(distinct case when inTahunMulaiTrx = vtahun and inBulanMulaiTrx = vbulan and isnull(deRpOmset,0) >= 1000000 and isnull(derpomset,0) < 6000000  then chkdcustomer end) inlb0106,
---         count(distinct case when inTahunMulaiTrx = vtahun and inBulanMulaiTrx = vbulan and isnull(deRpOmset,0) >= 6000000 and isnull(derpomset,0) <= 10000000 then chkdcustomer end) inlb0610,
---         count(distinct case when inTahunMulaiTrx = vtahun and inBulanMulaiTrx = vbulan and isnull(deRpOmset,0) >  10000000 then chkdcustomer end) inlb10up,
---         (inlb0106 + inlb0610 + inlb10up) inJumlahLB
---         from listlt
---         where loCustomerBaru = true
---         group by inkdwilayah,chkdemployee,chkdda
---     ) a
---     group by inkdwilayah,chkdemployee,chkdda
---     ;
---
+    perform create local temporary table if not exists insentiflt
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
+        deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalIns dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insentiflt
+    select inkdwilayah,chkdemployee,chkdda,
+    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+    (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
+    from (
+        select inkdwilayah,chkdemployee,chkdda,
+        count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+        count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+        count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+        (inlt50010 + inlt1050 + inlt50up) inJumlahLT
+        from listlt
+        group by inkdwilayah,chkdemployee,chkdda
+    ) a
+    group by inkdwilayah,chkdemployee,chkdda
+    ;
+
+    perform create local temporary table if not exists insentiflb
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkdda varchar(255),
+        deTarifLB0106 dec(25,6),deTarifLB0610 dec(25,6),deTarifLB10up dec(25,6),totalInsLB dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insentiflb
+    select inkdwilayah,chkdemployee,chkdda,
+    sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0106,0) * 10000::dec(25,6) else 0 end) deTarifLB0106,
+    sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0610,0) * 20000::dec(25,6) else 0 end) deTarifLB0610,
+    sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb10up,0) * 50000::dec(25,6) else 0 end) deTarifLB10up,
+    (deTarifLB0106 + deTarifLB0610 + deTarifLB10up) totalInsLb
+    from (
+        select inkdwilayah,chkdemployee,chkdda,
+        count(distinct case when isnull(deRpOmset,0) >= 1000000 and isnull(derpomset,0) < 6000000  then chkdcustomer end) inlb0106,
+        count(distinct case when isnull(deRpOmset,0) >= 6000000 and isnull(derpomset,0) <= 10000000 then chkdcustomer end) inlb0610,
+        count(distinct case when isnull(deRpOmset,0) >  10000000 then chkdcustomer end) inlb10up,
+        (inlb0106 + inlb0610 + inlb10up) inJumlahLB
+        from listlt
+        where loCustomerBaru = true
+        group by inkdwilayah,chkdemployee,chkdda
+    ) a
+    group by inkdwilayah,chkdemployee,chkdda
+    ;
+
 --     -- Syarat Prestasi Tagih
 --     perform create local temporary table if not exists piutangbulanan
 --     (
