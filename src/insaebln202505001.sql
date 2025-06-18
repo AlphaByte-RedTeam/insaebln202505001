@@ -35,8 +35,7 @@ declare
     vketposisi varchar(255);
     waktusaatini timestamp;
 
-    vEntity varchar(50);
-    ketTeam varchar(50);
+    vEntity varchar(255);
 
     stdInsCA int;
     stdInsNOC int;
@@ -76,13 +75,6 @@ if 1=1 then
     case
         when vposisi in (0) then 'Last'
         when vposisi in (1) then 'Current'
-    end;
-
-    ketteam :=
-    case
-        when vtipeperiode = 2 then 'AE'
-        when vtipeperiode = 3 then 'AAM'
-        when vtipeperiode = 4 then 'RBM'
     end;
 
     stdInsCA := 120 * 0.8;
@@ -155,9 +147,10 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer cust
             inner join (
-                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
+                group by chkdda,chkdemp
             ) emp on cust.chkdda = emp.chkdda
             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
             ;
@@ -169,9 +162,10 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer_aarta cust
             inner join (
-                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
+                group by chkdda,chkdemp
             ) emp on cust.chkdda = emp.chkdda
             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
             ;
@@ -185,9 +179,10 @@ if 1=1 then
 --             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
 --             from lp_mcustomer_history cust
 --             inner join (
---                 select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+--                 select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
 --                 from del_PPI_mInsDALoad
 --                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
+--                 group by chkdda,chkdemp
 --             ) emp on cust.chkdda = emp.chkdda
 --             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
 --             and intahun = vtahunhistory and inbulan = vbulanhistory
@@ -200,9 +195,10 @@ if 1=1 then
 --             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
 --             from lp_mcustomer_aarta_history cust
 --             inner join (
---                 select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,isnull(chNamaEmp,'N/A') chNamaEmp
+--                 select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
 --                 from del_PPI_mInsDALoad
 --                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
+--                 group by chkdda,chkdemp
 --             ) emp on cust.chkdda = emp.chkdda
 --             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
 --             and intahun = vtahunhistory and inbulan = vbulanhistory
@@ -321,10 +317,17 @@ if 1=1 then
     perform insert into insomsetkp
     select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,deQtyTarget,deQtyOmset,deRpOmset,
     case
-        when isnull(percentQtyNetto,0) < 0.80 then 0
-        when isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpOmset,0)
-        when isnull(percentQtyNetto,0) < 1 then 0.0035 * isnull(deRpOmset,0)
-        when isnull(percentQtyNetto,0) >= 1 then 0.0060 * isnull(deRpOmset,0)
+        -- AE
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.80 then 0
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpOmset,0)
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 1.00 then 0.0035 * isnull(deRpOmset,0)
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) >= 1.00 then 0.0060 * isnull(deRpOmset,0)
+
+        -- AAM
+        when vtipeperiode in (3) and isnull(percentQtyNetto,0) < 0.80 then 0
+        when vtipeperiode in (3) and isnull(percentQtyNetto,0) < 0.90 then 0.0010 * isnull(deRpOmset,0)
+        when vtipeperiode in (3) and isnull(percentQtyNetto,0) < 1.00 then 0.0020 * isnull(deRpOmset,0)
+        when vtipeperiode in (3) and isnull(percentQtyNetto,0) >= 1.00 then 0.0030 * isnull(deRpOmset,0)
         else 0
     end tarifins
     from (
@@ -375,10 +378,10 @@ if 1=1 then
     perform insert into insomsetkpglobal
     select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,deQtyTarget,deQtyOmset,deRpOmset,
     case
-        when isnull(percentQtyNetto,0) < 0.80 then 0
-        when isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpOmset,0)
-        when isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpOmset,0)
-        when isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpOmset,0)
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.80 then 0
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpOmset,0)
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpOmset,0)
+        when vtipeperiode in (2) and isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpOmset,0)
         else 0
     end totalins
     from (
@@ -415,9 +418,9 @@ if 1=1 then
 
     perform insert into insentiflt
     select inkdwilayah,chkdemployee,
-    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
-    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
-    sum(case when isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
     (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
     from (
         select inkdwilayah,chkdemployee,
@@ -439,9 +442,9 @@ if 1=1 then
 
     perform insert into insentiflb
     select inkdwilayah,chkdemployee,
-    sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0106,0) * 10000::dec(25,6) else 0 end) deTarifLB0106,
-    sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0610,0) * 20000::dec(25,6) else 0 end) deTarifLB0610,
-    sum(case when isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb10up,0) * 50000::dec(25,6) else 0 end) deTarifLB10up,
+    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0106,0) * 10000::dec(25,6) else 0 end) deTarifLB0106,
+    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0610,0) * 20000::dec(25,6) else 0 end) deTarifLB0610,
+    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb10up,0) * 50000::dec(25,6) else 0 end) deTarifLB10up,
     (deTarifLB0106 + deTarifLB0610 + deTarifLB10up) totalInsLb
     from (
         select inkdwilayah,chkdemployee,
@@ -536,10 +539,10 @@ if 1=1 then
         select inkdwilayah,chkdemployee,
         sum(isnull(dePercentTagih,0)) pctTagih,
         case
-            when pctTagih < 0.80 then 0
-            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
-            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
-            when pctTagih >= 0.95 then 1.00
+            when vtipeperiode in (2,3) and pctTagih < 0.80 then 0
+            when vtipeperiode in (2,3) and pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when vtipeperiode in (2,3) and pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when vtipeperiode in (2,3) and pctTagih >= 0.95 then 1.00
             else 0
         end pctTagihMultiplier
         from hitungsyaratbayar
@@ -621,7 +624,7 @@ if 1=1 then
     perform insert into vinsrekap
     select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,('9'||inkdins)::int inkdins,
-    a.chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     totalIns deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deReal
     from (
@@ -666,7 +669,7 @@ if 1=1 then
     perform insert into vinsrekap
     select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,('9'||inkdins)::int inkdins,
-    a.chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     deTarget deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,deReal deInsHangus
     from (
@@ -685,7 +688,7 @@ if 1=1 then
     perform insert into vinsrekap
     select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
-    a.chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     deInsFinal deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deInsHangus
     from (
@@ -718,7 +721,7 @@ if 1=1 then
     perform insert into vinsrekap
     select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
-    a.chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     dePctTagih deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,multiplier deInsHangus
     from (
