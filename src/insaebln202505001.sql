@@ -671,6 +671,75 @@ if 1=1 then
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
+    -- original value prestasi tagih
+    perform insert into vinsrekap
+    select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,('9'||inkdins)::int inkdins,
+    a.chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+    deTarget deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
+    null intgl,deReal deInsHangus
+    from (
+        select distinct chkdsite,inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        from customer
+    ) a
+    left join (
+        select chkdemployee,inkdwilayah,(vtipeperiode||999)::int inkdins,
+        sum(deTarget) deTarget,sum(deReal) deReal
+        from piutangbulanan
+        group by chkdemployee,inkdwilayah
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+    ;
+
+    -- calculated value
+    perform insert into vinsrekap
+    select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
+    a.chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+    deInsFinal deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
+    null intgl,null deInsHangus
+    from (
+        select distinct chkdsite,inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        from customer
+    ) a
+    left join (
+        select inkdwilayah,chkdemployee,depcttagih,deinskp deInsFinal,(vtipeperiode||600)::int inkdins
+        from insentiffinal
+
+        union all
+
+        select inkdwilayah,chkdemployee,depcttagih,deinskpglobal,(vtipeperiode||601)::int inkdins
+        from insentiffinal
+
+        union all
+
+        select inkdwilayah,chkdemployee,depcttagih,deinslt,(vtipeperiode||602)::int inkdins
+        from insentiffinal
+
+        union all
+
+        select inkdwilayah,chkdemployee,depcttagih,deinslb,(vtipeperiode||603)::int inkdins
+        from insentiffinal
+
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+    ;
+
+    -- calculated value prestasi tagih
+    perform insert into vinsrekap
+    select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
+    a.chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+    dePctTagih deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
+    null intgl,multiplier deInsHangus
+    from (
+        select distinct chkdsite,inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        from customer
+    ) a
+    left join (
+        select inkdwilayah,chkdemployee,multiplier,dePctTagih,(vtipeperiode||999)::int inkdins
+        from insentiffinal
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+    ;
+
 end if;
 end;
 $$
