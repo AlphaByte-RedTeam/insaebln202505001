@@ -47,8 +47,6 @@ declare
     vnmfile2 varchar(255);
     vfile2 varchar(255);
 
-    vinstagihan int;
-
     errCode VARCHAR(255);
 
 begin
@@ -96,13 +94,6 @@ if 1=1 then
     datglakhir := select max(datgl) from lp_mperiod where intahun = vtahun and inbulan = vbulan;
 
     vtahunlalu := vtahun - 1;
-
-    vinstagihan :=
-    case
-        when vtipeperiode = 2 then 2999
-        when vtipeperiode = 3 then 3999
-        when vtipeperiode = 4 then 4999
-    end;
 
     if vposisi in (0) then
         periodhistory := select max(intahun||right('00'||inbulan,2)) from lp_mdepo_history;
