@@ -740,6 +740,61 @@ if 1=1 then
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
+    perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
+
+    begin
+        errCode := '00000';
+        perform delete from PPI_tInsTrxDetil
+        where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan and
+        inkdtypeins = vtipeperiode and left(chnosurat,3)::int = left(nosurat,3)::int
+        ;
+
+        perform insert into PPI_tInsTrxDetil
+        (
+            chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+            inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+            chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+            deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+        )
+        select chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+        inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+        chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+        deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+        from list_detail
+        ;
+
+        perform delete from lp_tinsrekap_hrd
+        where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan and
+        inkdtypeins = vtipeperiode and left(chnosurat,3)::int = left(nosurat,3)::int
+        ;
+
+        perform insert into lp_tinsrekap_hrd
+        (
+            chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,
+            inTahun,inperiode,inpekan,inpekantahun,inbulan,inkdtypeins,inkdins,
+            chkdda,chkdemployee,chketda,chketemployee,
+            deinsentif,chnosurat,locurrent,inkdteamda,chUserCreated,dacreated,intgl,deinshangus
+        )
+        select chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,
+        inTahun,inperiode,inpekan,inpekantahun,inbulan,inkdtypeins,inkdins,
+        chkdda,chkdemployee,chketda,chketemployee,
+        deinsentif,chnosurat,locurrent,inkdteamda,chUserCreated,dacreated,intgl,deinshangus
+        from vinsrekap
+        ;
+
+        EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS errCode := RETURNED_SQLSTATE;
+    end;
+
+    if errCode <> '00000' then
+        perform rollback;
+        perform call SPS_Ins_Loging(1,'INSPPI',0,'Failed RPT_insaebln2025050001'||waktusaatini,errCode);
+    else
+        perform commit;
+        perform call SPS_Ins_Loging(1,'INSPPI',0,'Success RPT_insaebln2025050001'||waktusaatini,errCode);
+    end if;
+
+    perform call SPS_Ins_Loging(1,'INSPPI',0,'End Insert RPT_insaebln2025050001'||waktusaatini,'00000');
+
 end if;
 end;
 $$
