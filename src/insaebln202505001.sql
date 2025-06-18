@@ -267,6 +267,7 @@ if 1=1 then
     left join (
         select product_key,chkp
         from produkPPI
+        where chkp is not null
     ) c on a.product_key = c.product_key
     group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,chkdda,chkdsite,
     chkdcustomer,chNamaCustomer,chkp,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
@@ -569,12 +570,12 @@ if 1=1 then
     */
     perform insert into list_detail
     select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
-    null inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
     null deTargetQty,deQtyNetto,deRpNetto,null deReal,
     vuser,waktusaatini,chNamaCustomer chketcustomer
     from (
-        select chkdsite,inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,locustomerbaru,
+        select inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,locustomerbaru,
         chkp,deQtyOmset deQtyNetto,deRpOmset deRpNetto,chnamacustomer
         from listlt
     ) a
@@ -582,7 +583,7 @@ if 1=1 then
 
     perform insert into list_detail
     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
-    null inkddepo,a.chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
     deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,null deReal,
     vuser,waktusaatini,null chketcustomer
@@ -605,8 +606,8 @@ if 1=1 then
     ;
 
     perform insert into list_detail
-    select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,null inkdcabang,null inkddepo,chkdsite,
-    vtipeperiode,vketemployee,chkdemployee chempid,chnamaemployee chketemp,
+    select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,null inkdcabang,
+    null inkddepo,null chkdsite,vtipeperiode,vketemployee,chkdemployee chempid,chnamaemployee chketemp,
     chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
     null deQtyTarget,null deQtyOmset,detarget,dereal,
     vuser,waktusaatini,chNamaCustomer chketcustomer
@@ -623,13 +624,13 @@ if 1=1 then
 
     -- original value
     perform insert into vinsrekap
-    select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,('9'||inkdins)::int inkdins,
     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     totalIns deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deReal
     from (
-        select distinct chkdsite,inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
@@ -668,13 +669,13 @@ if 1=1 then
 
     -- original value prestasi tagih
     perform insert into vinsrekap
-    select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,('9'||inkdins)::int inkdins,
     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     deTarget deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,deReal deInsHangus
     from (
-        select distinct chkdsite,inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
@@ -687,13 +688,13 @@ if 1=1 then
 
     -- calculated value
     perform insert into vinsrekap
-    select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     deInsFinal deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deInsHangus
     from (
-        select distinct chkdsite,inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
@@ -720,13 +721,13 @@ if 1=1 then
 
     -- calculated value prestasi tagih
     perform insert into vinsrekap
-    select a.chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     dePctTagih deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,multiplier deInsHangus
     from (
-        select distinct chkdsite,inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
