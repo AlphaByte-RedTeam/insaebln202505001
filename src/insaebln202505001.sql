@@ -238,10 +238,10 @@ if 1=1 then
     perform insert into prelistlt
     select 1 inTipeOms,null intahun,null inbulan,null inkdwilayah,null inkdcabang,null inkddepo,
     null chkdemployee,null chNamaEmp,null chkdda,null chkdsite,
-    null chkdcustomer,null chNamaCustomer,chproduk chTipeKp,null chkp,null inTahunMulaiTrx,null inBulanMulaiTrx,
+    null chkdcustomer,null chNamaCustomer,chproduk chTipeKp,chketproduk chkp,null inTahunMulaiTrx,null inBulanMulaiTrx,
     deTarget deQtyTarget,null deRpNetto,null loCustomerBaru
     from (
-        select deTarget,chproduk
+        select deTarget,chproduk,chketproduk
         from del_PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('T')
         and intahun = vtahun and inbulan = vbulan and inkdwil in (select wil from wilayah)
@@ -341,13 +341,13 @@ if 1=1 then
     perform create local temporary table if not exists tempomsetkpglobal
     (
         inkdwilayah int,chketwilayah varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),
-        chkdda varchar(255),chkdsite varchar(255),
+        chkdda varchar(255),chkdsite varchar(255),chkp varchar(255),
         deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),
         percentQtyNetto dec(25,6)
     ) on commit preserve rows;
 
     perform insert into tempomsetkpglobal
-    select a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemp,a.chkdda,a.chkdsite,
+    select a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemp,a.chkdda,a.chkdsite,chkp,
     isnull(deQtyTarget,0) qtyTarget,isnull(deQtyOmset,0) qtyOmset,isnull(deRpOmset,0) rpOmset,
     sum(case when (qtyTarget <= 0) or (qtyOmset <= 0) then 0 else qtyOmset/qtyTarget end) percentQtyNetto
     from (
@@ -362,21 +362,22 @@ if 1=1 then
         group by inkdwilayah,chkdemployee,chkdda,chkdsite
     ) b on a.chkdda = b.chkdda and a.chkdsite = b.chkdsite
     cross join (
-        select sum(isnull(deQtyNetto,0)) deQtyTarget
+        select sum(isnull(deQtyNetto,0)) deQtyTarget,chkp
         from prelistlt
         where inTipeOms in (1)
+        group by chkp
     ) c
-    group by a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemp,a.chkdda,a.chkdsite,deQtyTarget,deQtyOmset,deRpOmset
+    group by a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemp,a.chkdda,a.chkdsite,chkp,deQtyTarget,deQtyOmset,deRpOmset
     ;
 
     perform create local temporary table if not exists insomsetkpglobal
     (
-        inkdwilayah int,chketwilayah varchar(255),chkdsite varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),
+        inkdwilayah int,chketwilayah varchar(255),chkdsite varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
         deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),totalins dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkpglobal
-    select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,deQtyTarget,deQtyOmset,deRpOmset,
+    select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,deQtyTarget,deQtyOmset,deRpOmset,
     case
         when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.80 then 0
         when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpOmset,0)
@@ -385,10 +386,10 @@ if 1=1 then
         else 0
     end totalins
     from (
-        select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,
+        select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,
         sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto
         from tempomsetkpglobal
-        group by inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee
+        group by inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp
     ) a
     ;
 
@@ -594,7 +595,7 @@ if 1=1 then
     perform insert into list_detail
     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    null chkdcustomer,null loCustomerBaru,'T-GLOBAL' chkp,null chnofaktur,null datgljt,
+    null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
     deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,null deReal,
     vuser,waktusaatini,null chketcustomer
     from insomsetkpglobal a
