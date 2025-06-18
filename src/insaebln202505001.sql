@@ -267,7 +267,6 @@ if 1=1 then
     left join (
         select product_key,chkp
         from produkPPI
-        where chkp is not null
     ) c on a.product_key = c.product_key
     group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,chkdda,chkdsite,
     chkdcustomer,chNamaCustomer,chkp,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
@@ -289,6 +288,7 @@ if 1=1 then
         select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp,chkdda,chkdsite,chkp
         from (select distinct inkdwilayah,chketwilayah,chkdda,chkdsite,chkdemployee,chnamaemp from customer) a
         cross join (select distinct chkp from produkPPI) b
+        where chkp is not null
     ) a
     left join (
         select inkdwilayah,chkdemployee,chkdda,chkdsite,chkp,
