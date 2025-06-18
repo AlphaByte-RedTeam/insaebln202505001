@@ -55,7 +55,7 @@ begin
 if 1=1 then
     vEntity := SELECT chvalue FROM lp_mreportfilter WHERE chkey = 'db';
 
-    nosurat := '001-CEO-PPI-V-25'; -- TODO: Change the nomor surat later
+    nosurat := '001-CEO-PPI-V-25';
 
     MySetDir := '/dwh/'||vEntity||'/report/rutin/insentif/insaebln202505001/'||vnama||'.csv';
 
@@ -501,23 +501,27 @@ if 1=1 then
 
     perform create local temporary table if not exists insentiffinal
     (
-        inkdwilayah int,chkdemployee varchar(255),deTotalInsentif dec(25,6)
+        inkdwilayah int,chkdemployee varchar(255),multiplier dec(25,6),
+        dePctTagih dec(25,6),deInsKp dec(25,6),deInsKpGlobal dec(25,6),deInsLt dec(25,6),deInsLb dec(25,6),
+        deTotalInsentif dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insentiffinal
-    select a.inkdwilayah,a.chkdemployee,
-    case
-        when pctTagih < 0.80 then 0
-        when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80 * totalInsFinal
-        when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90 * totalInsFinal
-        when pctTagih >= 0.95 then 0.80 * totalInsFinal
-        else 0
-    end deTotalInsFinal
+    select a.inkdwilayah,a.chkdemployee,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,isnull(pctTagih,0) pctTagih1,
+    pctTagihMultiplier1 * isnull(inskp,0)          calcInsKp,
+    pctTagihMultiplier1 * isnull(inskpglobal,0)    calcInsKpGlobal,
+    pctTagihMultiplier1 * isnull(inslt,0)          calcInsLt,
+    pctTagihMultiplier1 * isnull(inslb,0)          calcInsLb,
+    (calcInsKp + calcInsKpGlobal + calcInsLt + calcInsLb) deTotalInsFinal
     from (
         select a.inkdwilayah,a.chkdemployee,
-        sum(isnull(totalInsKp,0) + isnull(totalInsKpGlobal,0) + isnull(totalInsLT,0) + isnull(totalInsLB,0)) totalInsFinal
+        sum(isnull(totalInsKp,0)) inskp,
+        sum(isnull(totalInsKpGlobal,0)) inskpglobal,
+        sum(isnull(totalInsLT,0)) inslt,
+        sum(isnull(totalInsLB,0)) inslb
         from (
-            select distinct inkdwilayah,chkdemployee from customer
+            select distinct inkdwilayah,chkdemployee
+            from customer
         ) a
         left join (
             select inkdwilayah,chkdemployee,sum(isnull(tarifins,0)) totalInsKp from insomsetkp
@@ -538,7 +542,16 @@ if 1=1 then
         group by a.inkdwilayah,a.chkdemployee
     ) a
     left join (
-        select inkdwilayah,chkdemployee,sum(isnull(dePercentTagih,0)) pctTagih from hitungsyaratbayar
+        select inkdwilayah,chkdemployee,
+        sum(isnull(dePercentTagih,0)) pctTagih,
+        case
+            when pctTagih < 0.80 then 0
+            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when pctTagih >= 0.95 then 1.00
+            else 0
+        end pctTagihMultiplier
+        from hitungsyaratbayar
         group by inkdwilayah,chkdemployee
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
@@ -604,42 +617,6 @@ if 1=1 then
     vuser,waktusaatini,chNamaCustomer chketcustomer
     from piutangbulanan
     ;
-
---     perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
---
---     begin
---         errCode := '00000';
---         perform delete from PPI_tInsTrxDetil
---         where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
---         and inkdtypeins = vtipeperiode
---         ;
---
---         perform insert into PPI_tInsTrxDetil
---         (
---             chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
---             inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
---             chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
---             deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
---         )
---         select chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
---         inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
---         chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
---         deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
---         from list_detail
---         ;
---
---         EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS errCode := RETURNED_SQLSTATE;
---     end;
---
---     if errCode <> '00000' then
---         perform rollback;
---         perform call SPS_Ins_Loging(1,'INSPPI',0,'Failed RPT_insaebln2025050001'||waktusaatini,errCode);
---     else
---         perform commit;
---         perform call SPS_Ins_Loging(1,'INSPPI',0,'Success RPT_insaebln2025050001'||waktusaatini,errCode);
---     end if;
---
---     perform call SPS_Ins_Loging(1,'INSPPI',0,'End Insert RPT_insaebln2025050001'||waktusaatini,'00000');
 
     perform create local temporary table if not exists vinsrekap
     (
