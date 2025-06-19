@@ -579,7 +579,7 @@ if 1=1 then
         * 2: Prestasi Tagih
     */
     perform insert into list_detail
-    select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
+    select nosurat,0 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
     deQtyNetto deQtyOmset,deRpNetto deRpOmset,null deTarget,null deReal,
@@ -592,7 +592,7 @@ if 1=1 then
     ;
 
     perform insert into list_detail
-    select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
+    select nosurat,1 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
     deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,deRateMultiplier deReal,
@@ -604,7 +604,7 @@ if 1=1 then
     ;
 
     perform insert into list_detail
-    select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
+    select nosurat,1 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
     deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,dePctQtyNettoMultiplier deReal,
@@ -616,7 +616,7 @@ if 1=1 then
     ;
 
     perform insert into list_detail
-    select nosurat,2 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,inkdwilayah,null inkdcabang,
+    select nosurat,2 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,chkdemployee chempid,chnamaemployee chketemp,
     chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
     null deQtyTarget,null deQtyOmset,detarget,dereal,
