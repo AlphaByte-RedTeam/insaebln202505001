@@ -103,13 +103,13 @@ if 1=1 then
     perform create local temporary table if not exists produkPPI
     (
         product_key int,chkdbarang varchar(255),chkp varchar(255),chklasifikasi varchar(255),chkpprodukmodel varchar(255),
-        chpt varchar(255),chflagitemcustom varchar(255),chflagaktif varchar(255),itemfestive varchar(255)
+         chpt varchar(255),chflagitemcustom varchar(255),chflagaktif varchar(255),itemfestive varchar(255),inkdkonvbesarid int
     ) on commit preserve rows;
 
     if vposisi in (1) then
         perform insert into produkPPI
         select product.product_key,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
-        chpt,chflagitemcustom,chflagaktif,chflagitemfestive
+        chpt,chflagitemcustom,chflagaktif,chflagitemfestive,isnull(inkdkonvbesarid,0)
         from lp_mproduct product
         left join (
             select chkdbarang,chkp,chklasifikasi,chkpprodukmodel,chpt,chflagitemfestive
@@ -122,7 +122,7 @@ if 1=1 then
     if vposisi in (0) then
         perform insert into produkPPI
         select product.product_key,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
-        chpt,chflagitemcustom,chflagaktif,chflagitemfestive
+        chpt,chflagitemcustom,chflagaktif,chflagitemfestive,inkdkonvbesarid
         from lp_mproduct_history product
         left join (
             select chkdbarang,chkp,chklasifikasi,chkpprodukmodel,chpt,chflagitemfestive
@@ -147,12 +147,12 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer cust
             inner join (
-                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B')
-                group by chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda
-            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
+                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
+                group by inkdwil,chkdda,chkdemp
+            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
+            where datglmulaitransaksi is not null
             ;
         end if;
 
@@ -162,12 +162,12 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer_aarta cust
             inner join (
-                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B')
-                group by chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda
-            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
+                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
+                group by inkdwil,chkdda,chkdemp
+            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
+            where datglmulaitransaksi is not null
             ;
         end if;
     end if;
@@ -179,12 +179,12 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_history cust
             inner join (
-                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B')
-                group by chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda
-            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
+                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
+                group by inkdwil,chkdda,chkdemp
+            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
+            where datglmulaitransaksi is not null
             and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
@@ -195,12 +195,12 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_aarta_history cust
             inner join (
-                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B')
-                group by chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda
-            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
+                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
+                group by inkdwil,chkdda,chkdemp
+            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
+            where datglmulaitransaksi is not null
             and intahun = vtahunhistory and inbulan = vbulanhistory
             ;
         end if;
@@ -265,9 +265,10 @@ if 1=1 then
     ;
 
     perform insert into prelistlt
-    select 2 inTipeOms,intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,
+    select 2 inTipeOms,intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,
+    chkdemployee,chNamaEmp,
     chkdcustomer,chNamaCustomer,null chtipekp,chkp,inTahunMulaiTrx,inBulanMulaiTrx,
-    sum(deqtynetto) deqtynetto,sum(derpnetto) derpnetto,
+    sum(deqtynetto/inkdkonvbesarid) deqtynetto1,sum(derpnetto) derpnetto,
     case when inTahunMulaiTrx = inTahun and inBulanMulaiTrx = inBulan then 1 else 0 end loCustomerBaru
     from (
         select product_key,customer_key,deqtynetto,derpnetto,intahun,inbulan
@@ -281,7 +282,7 @@ if 1=1 then
         where inkdwilayah in (select wil from wilayah)
     ) b on a.customer_key = b.customer_key
     left join (
-        select product_key,chkp
+        select product_key,chkp,isnull(inkdkonvbesarid,0) inkdkonvbesarid
         from produkPPI
     ) c on a.product_key = c.product_key
     group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,
@@ -328,13 +329,13 @@ if 1=1 then
     perform create local temporary table if not exists insomsetkp
     (
         inkdwilayah int,chketwilayah varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
-        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),deRateMultiplier dec(25,6),tarifins dec(25,6)
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),deRateMultiplier dec(25,6),totalins dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkp
     select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,
     isnull(deQtyTarget,0) deQtyTarget1,isnull(deQtyOmset,0) deQtyOmset1,isnull(deRpOmset,0) deRpOmset1,pctQtyNettoMultiplier,
-    pctQtyNettoMultiplier * deRpOmset1 tarifins
+    pctQtyNettoMultiplier * greatest(deRpOmset1,0) totalins
     from (
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,
         sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
@@ -546,7 +547,7 @@ if 1=1 then
             from customer
         ) a
         left join (
-            select inkdwilayah,chkdemployee,sum(isnull(tarifins,0)) totalInsKp from insomsetkp
+            select inkdwilayah,chkdemployee,sum(isnull(totalins,0)) totalInsKp from insomsetkp
             group by inkdwilayah,chkdemployee
         ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
         left join (
@@ -662,7 +663,7 @@ if 1=1 then
     left join (
         -- omset kp
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||600)::int inkdins,sum(tarifins) totalIns
+        (vtipeperiode||600)::int inkdins,sum(totalins) totalIns
         from insomsetkp
         group by chkdemployee,inkdwilayah
 
