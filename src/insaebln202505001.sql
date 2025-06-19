@@ -312,28 +312,30 @@ if 1=1 then
     perform create local temporary table if not exists insomsetkp
     (
         inkdwilayah int,chketwilayah varchar(255),chkdsite varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
-        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),tarifins dec(25,6)
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),deRateMultiplier dec(25,6),tarifins dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkp
-    select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,deQtyTarget,deQtyOmset,deRpOmset,
-    case
-        -- AE
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.80 then 0
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.90 then 0.0015 * isnull(deRpOmset,0)
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 1.00 then 0.0035 * isnull(deRpOmset,0)
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) >= 1.00 then 0.0060 * isnull(deRpOmset,0)
-
-        -- AAM
-        when vtipeperiode in (3) and isnull(percentQtyNetto,0) < 0.80 then 0
-        when vtipeperiode in (3) and isnull(percentQtyNetto,0) < 0.90 then 0.0010 * isnull(deRpOmset,0)
-        when vtipeperiode in (3) and isnull(percentQtyNetto,0) < 1.00 then 0.0020 * isnull(deRpOmset,0)
-        when vtipeperiode in (3) and isnull(percentQtyNetto,0) >= 1.00 then 0.0030 * isnull(deRpOmset,0)
-        else 0
-    end tarifins
+    select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,
+    isnull(deQtyTarget,0) deQtyTarget1,isnull(deQtyOmset,0) deQtyOmset1,isnull(deRpOmset,0) deRpOmset1,pctQtyNettoMultiplier,
+    pctQtyNettoMultiplier * deRpOmset1 tarifins
     from (
         select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,
-        sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto
+        sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
+        case
+            -- AE
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.80 then 0
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0015
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0060
+
+            -- AAM
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.80 then 0
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0030
+            else 0
+        end pctQtyNettoMultiplier
         from tempomsetkp
         group by inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp
     ) b
@@ -374,21 +376,29 @@ if 1=1 then
     perform create local temporary table if not exists insomsetkpglobal
     (
         inkdwilayah int,chketwilayah varchar(255),chkdsite varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
-        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),totalins dec(25,6)
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),dePctQtyNettoMultiplier dec(25,6),totalins dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkpglobal
-    select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,deQtyTarget,deQtyOmset,deRpOmset,
-    case
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.80 then 0
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 0.90 then 0.0007 * isnull(deRpOmset,0)
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) < 1 then 0.0015 * isnull(deRpOmset,0)
-        when vtipeperiode in (2) and isnull(percentQtyNetto,0) >= 1 then 0.0030 * isnull(deRpOmset,0)
-        else 0
-    end totalins
+    select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,
+    isnull(deQtyTarget,0) deQtyTarget1,isnull(deQtyOmset,0) deQtyOmset1,isnull(deRpOmset,0) deRpOmset1,pctQtyNettoMultiplier,
+    pctQtyNettoMultiplier * deRpOmset1 totalins
     from (
         select inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp,
-        sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto
+        sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
+        case
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.80 then 0
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0007
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1 then 0.0015
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) >= 1 then 0.0030
+
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.80 then 0
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0005
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1 then 0.0010
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) >= 1 then 0.0015
+
+            else 0
+        end pctQtyNettoMultiplier
         from tempomsetkpglobal
         group by inkdwilayah,chketwilayah,chkdsite,chkdemployee,chnamaemployee,chkp
     ) a
@@ -585,7 +595,7 @@ if 1=1 then
     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
-    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,null deReal,
+    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,deRateMultiplier deReal,
     vuser,waktusaatini,null chketcustomer
     from insomsetkp a
     inner join (
@@ -597,7 +607,7 @@ if 1=1 then
     select nosurat,1 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
-    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,null deReal,
+    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,dePctQtyNettoMultiplier deReal,
     vuser,waktusaatini,null chketcustomer
     from insomsetkpglobal a
     inner join (
