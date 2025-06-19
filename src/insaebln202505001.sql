@@ -206,6 +206,22 @@ if 1=1 then
         end if;
     end if;
 
+    perform create local temporary table if not exists temp_customer_tobe
+    (
+        inkdwilayah int,chkdemployee varchar(255),chnamaemptobe varchar(255)
+    ) on commit preserve rows;
+
+    perform insert into temp_customer_tobe
+    select inkdwilayah,chkdemployee,min(chnamaemp) chnamaempmax
+    from customer
+    group by inkdwilayah,chkdemployee
+    ;
+
+    perform update customer a
+    set chnamaemp = chnamaemptobe
+    from temp_customer_tobe b where a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+    ;
+
     /*
      ** Tipe Omset Classification (inTipeOms) **
      ** 0: target KP
@@ -568,7 +584,7 @@ if 1=1 then
         inkddepo int,chkdsite varchar(255),inkdtypeins int,chkettypeins varchar(255),chempid varchar(255),chketemp varchar(255),
         chkdcustomer varchar(255),locustomerbaru boolean,chkp varchar(255),chnofaktur varchar(255),datgljt date,
         deqtynetto dec(25,6),derpnetto dec(25,6),detarget dec(25,6),dereal dec(25,6),
-        chusercreated varchar(255),dacreated date,chketcustomer varchar(255)
+        chusercreated varchar(255),dacreated timestamp,chketcustomer varchar(255)
     ) on commit preserve rows;
     -- targetQTY,omsetQTY,omsetRP,null
 
@@ -640,7 +656,7 @@ if 1=1 then
     totalIns deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deReal
     from (
-        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
@@ -685,7 +701,7 @@ if 1=1 then
     deTarget deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,deReal deInsHangus
     from (
-        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
@@ -704,7 +720,7 @@ if 1=1 then
     deInsFinal deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deInsHangus
     from (
-        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
@@ -737,7 +753,7 @@ if 1=1 then
     dePctTagih deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,multiplier deInsHangus
     from (
-        select distinct inkdwilayah,chketwilayah,chkdda,chkdemployee,chnamaemp chnamaemployee
+        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
         from customer
     ) a
     left join (
