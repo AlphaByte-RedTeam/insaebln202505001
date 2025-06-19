@@ -119,19 +119,19 @@ if 1=1 then
         ;
     end if;
 
---     if vposisi in (0) then
---         perform insert into produkPPI
---         select product.product_key,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
---         chpt,chflagitemcustom,chflagaktif,chflagitemfestive
---         from lp_mproduct_history product
---         left join (
---             select chkdbarang,chkp,chklasifikasi,chkpprodukmodel,chpt,chflagitemfestive
---             chflagitemcustom,chflagaktif,chflagitemfestive
---             from PPI_mItem
---         ) b on product.chkdbarang = b.chkdbarang
---         and intahun = vtahunhistory and inbulan = vbulanhistory
---         ;
---     end if;
+    if vposisi in (0) then
+        perform insert into produkPPI
+        select product.product_key,product.chkdbarang,chkp,chklasifikasi,chkpprodukmodel,
+        chpt,chflagitemcustom,chflagaktif,chflagitemfestive
+        from lp_mproduct_history product
+        left join (
+            select chkdbarang,chkp,chklasifikasi,chkpprodukmodel,chpt,chflagitemfestive
+            chflagitemcustom,chflagaktif,chflagitemfestive
+            from PPI_mItem
+        ) b on product.chkdbarang = b.chkdbarang
+        and intahun = vtahunhistory and inbulan = vbulanhistory
+        ;
+    end if;
 
     perform create local temporary table if not exists customer
     (
@@ -172,39 +172,39 @@ if 1=1 then
         end if;
     end if;
 
---     if vposisi in (0) then
---         if vdepolp in (0,1) then
---             perform insert into customer
---             select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
---             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
---             from lp_mcustomer_history cust
---             inner join (
---                 select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
---                 from del_PPI_mInsDALoad
---                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
---                 group by chkdda,chkdemp
---             ) emp on cust.chkdda = emp.chkdda
---             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
---             and intahun = vtahunhistory and inbulan = vbulanhistory
---             ;
---         end if;
---
---         if vdepolp in (2) then
---             perform insert into customer
---             select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
---             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
---             from lp_mcustomer_aarta_history cust
---             inner join (
---                 select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
---                 from del_PPI_mInsDALoad
---                 where chJabatan in (vketemployee) and chDivisi in ('B2B')
---                 group by chkdda,chkdemp
---             ) emp on cust.chkdda = emp.chkdda
---             where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
---             and intahun = vtahunhistory and inbulan = vbulanhistory
---             ;
---         end if;
---     end if;
+    if vposisi in (0) then
+        if vdepolp in (0,1) then
+            perform insert into customer
+            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
+            chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
+            from lp_mcustomer_history cust
+            inner join (
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                from del_PPI_mInsDALoad
+                where chJabatan in (vketemployee) and chDivisi in ('B2B')
+                group by chkdda,chkdemp
+            ) emp on cust.chkdda = emp.chkdda
+            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
+            and intahun = vtahunhistory and inbulan = vbulanhistory
+            ;
+        end if;
+
+        if vdepolp in (2) then
+            perform insert into customer
+            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
+            chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
+            from lp_mcustomer_aarta_history cust
+            inner join (
+                select distinct chkdda,'9'||substring(chkdemp,2) chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                from del_PPI_mInsDALoad
+                where chJabatan in (vketemployee) and chDivisi in ('B2B')
+                group by chkdda,chkdemp
+            ) emp on cust.chkdda = emp.chkdda
+            where cust.inkdwilayah in (select wil from wilayah) and datglmulaitransaksi is not null
+            and intahun = vtahunhistory and inbulan = vbulanhistory
+            ;
+        end if;
+    end if;
 
     /*
      ** Tipe Omset Classification (inTipeOms) **
@@ -572,7 +572,7 @@ if 1=1 then
     select nosurat,0 detailTipeIns,vtahun,vbulan,vtipeperiode,0 inpekan,a.inkdwilayah,null inkdcabang,
     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
     chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
-    null deTargetQty,deQtyNetto,deRpNetto,null deReal,
+    deQtyNetto deQtyOmset,deRpNetto deRpOmset,null deTarget,null deReal,
     vuser,waktusaatini,chNamaCustomer chketcustomer
     from (
         select inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,locustomerbaru,
@@ -794,7 +794,6 @@ if 1=1 then
 end if;
 end;
 $$
--- TODO: remove comment from vposisi last (0)
 -- TODO: change table with del_ to regular table
 
 -- NOTE: Testing pakai call SP berikut:
