@@ -619,7 +619,7 @@ if 1=1 then
         chkdsite varchar(255),inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),inkddepo int,chketdepo varchar(255),
         inTahun int,inperiode int,inpekan int,inpekantahun int,inbulan int,inkdtypeins int,inkdins int,
         chkdda varchar(255),chkdemployee varchar(255),chketda varchar(255),chketemployee varchar(255),
-        deinsentif dec(25,6),chnosurat varchar(255),locurrent int,inkdteamda int,chusercreated varchar(255),dacreated datetime,intgl int,deinshangus dec(25,6)
+        deinsentif dec(25,6),chnosurat varchar(255),locurrent int,inkdteamda int,chusercreated varchar(255),dacreated timestamp,intgl int,deinshangus dec(25,6)
     ) on commit preserve rows;
 
     -- original value
