@@ -414,6 +414,11 @@ if 1=1 then
         from prelistlt
         where inTipeOms in (1)
         group by chkp
+
+        union all
+
+        select sum(0),'0' chkp
+        from lp_msetkpi
     ) c
     group by a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemp,chkp,deQtyTarget,deQtyOmset,deRpOmset
     ;
@@ -560,13 +565,15 @@ if 1=1 then
 
     perform create local temporary table if not exists insentiffinal
     (
-        inkdwilayah int,chkdemployee varchar(255),multiplier dec(25,6),
-        dePctTagih dec(25,6),deInsKp dec(25,6),deInsKpGlobal dec(25,6),deInsLt dec(25,6),deInsLb dec(25,6),
+        inkdwilayah int,chkdemployee varchar(255),multiplier dec(25,6),dePctTagih dec(25,6),
+        deInsKpBefore dec(25,6),deInsKpGlobalBefore dec(25,6),deInsLtBefore dec(25,6),deInsLbBefore dec(25,6),
+        deInsKpAfter dec(25,6),deInsKpGlobalAfter dec(25,6),deInsLtAfter dec(25,6),deInsLbAfter dec(25,6),
         deTotalInsentif dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insentiffinal
     select a.inkdwilayah,a.chkdemployee,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,isnull(pctTagih,0) pctTagih1,
+    isnull(inskp,0) insKpBefore,isnull(inskpglobal,0) insKpGlobalBefore,isnull(inslt,0) insLtBefore,isnull(inslb,0) insLbBefore,
     pctTagihMultiplier1 * isnull(inskp,0)          calcInsKp,
     pctTagihMultiplier1 * isnull(inskpglobal,0)    calcInsKpGlobal,
     pctTagihMultiplier1 * isnull(inslt,0)          calcInsLt,
@@ -688,7 +695,7 @@ if 1=1 then
     -- original value
     perform insert into vinsrekap
     select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
-    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,('9'||inkdins)::int inkdins,
+    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     totalIns deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,null deReal
@@ -699,32 +706,32 @@ if 1=1 then
     left join (
         -- omset kp
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||600)::int inkdins,sum(isnull(totalins,0)) totalIns
-        from insomsetkp
+        ('9'||vtipeperiode||600)::int inkdins,sum(isnull(deInsKpBefore,0)) totalIns
+        from insentiffinal
         group by chkdemployee,inkdwilayah
 
         union all
 
         -- omset KP global
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||601)::int inkdins,sum(isnull(totalins,0))
-        from insomsetkpglobal
+        ('9'||vtipeperiode||601)::int inkdins,sum(isnull(deInsKpGlobalBefore,0))
+        from insentiffinal
         group by chkdemployee,inkdwilayah
 
         union all
 
         -- LT Omset
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||602)::int inkdins,sum(isnull(totalins,0))
-        from insentiflt
+        ('9'||vtipeperiode||602)::int inkdins,sum(isnull(deInsLtBefore,0))
+        from insentiffinal
         group by chkdemployee,inkdwilayah
 
         union all
 
         -- LB Omset
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||603)::int inkdins,sum(isnull(totalinslb,0))
-        from insentiflb
+        ('9'||vtipeperiode||603)::int inkdins,sum(isnull(deInsLbBefore,0))
+        from insentiffinal
         group by chkdemployee,inkdwilayah
 
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
@@ -733,7 +740,7 @@ if 1=1 then
     -- original value prestasi tagih
     perform insert into vinsrekap
     select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
-    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,('9'||inkdins)::int inkdins,
+    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
     deTarget deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
     null intgl,deReal deInsHangus
@@ -742,7 +749,7 @@ if 1=1 then
         from customer
     ) a
     left join (
-        select chkdemployee,inkdwilayah,(vtipeperiode||999)::int inkdins,
+        select chkdemployee,inkdwilayah,('9'||vtipeperiode||999)::int inkdins,
         sum(isnull(deTarget,0)) deTarget,sum(isnull(deReal,0)) deReal
         from piutangbulanan
         group by chkdemployee,inkdwilayah
@@ -761,22 +768,22 @@ if 1=1 then
         from customer
     ) a
     left join (
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0) depcttagih,isnull(deinskp,0) deInsFinal,(vtipeperiode||600)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0) depcttagih,isnull(deinskpafter,0) deInsFinal,(vtipeperiode||600)::int inkdins
         from insentiffinal
 
         union all
 
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinskpglobal,0),(vtipeperiode||601)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinskpglobalafter,0),(vtipeperiode||601)::int inkdins
         from insentiffinal
 
         union all
 
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinslt,0),(vtipeperiode||602)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinsltafter,0),(vtipeperiode||602)::int inkdins
         from insentiffinal
 
         union all
 
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinslb,0),(vtipeperiode||603)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinslbafter,0),(vtipeperiode||603)::int inkdins
         from insentiffinal
 
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
