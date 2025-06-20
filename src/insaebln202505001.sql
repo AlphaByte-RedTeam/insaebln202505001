@@ -351,6 +351,12 @@ if 1=1 then
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0030
+
+            -- RBM
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.80 then 0
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0008
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0012
             else 0
         end pctQtyNettoMultiplier
         from tempomsetkp
@@ -404,15 +410,23 @@ if 1=1 then
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,
         sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
         case
+            -- AE
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.80 then 0
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0007
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1 then 0.0015
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) >= 1 then 0.0030
 
+            -- AAM
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.80 then 0
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0005
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1 then 0.0010
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) >= 1 then 0.0015
+
+            -- RBM
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.80 then 0
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0002
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0004
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0006
 
             else 0
         end pctQtyNettoMultiplier
@@ -568,10 +582,10 @@ if 1=1 then
         select inkdwilayah,chkdemployee,
         sum(isnull(dePercentTagih,0)) pctTagih,
         case
-            when vtipeperiode in (2,3) and pctTagih < 0.80 then 0
-            when vtipeperiode in (2,3) and pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
-            when vtipeperiode in (2,3) and pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
-            when vtipeperiode in (2,3) and pctTagih >= 0.95 then 1.00
+            when vtipeperiode in (2,3,4) and pctTagih <  0.80 then 0
+            when vtipeperiode in (2,3,4) and pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when vtipeperiode in (2,3,4) and pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when vtipeperiode in (2,3,4) and pctTagih >= 0.95 then 1.00
             else 0
         end pctTagihMultiplier
         from hitungsyaratbayar
