@@ -143,31 +143,41 @@ if 1=1 then
     if vposisi in (1) then
         if vdepolp in (0,1) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
-            from lp_mcustomer cust
-            inner join (
-                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
-                from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
-                group by inkdwil,chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
-            where datglmulaitransaksi is not null
+            select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            from del_ppi_minsdaload a
+            left join (
+                select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+                chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+                from lp_mcustomer
+                where datglmulaitransaksi is not null and inkdwilayah in (select wil from wilayah)
+            ) b on a.chkdda = b.chkdda and a.inkdwil = b.inkdwilayah
+            left join (
+                select distinct inkdwilayah,chketwilayah
+                from lp_mdepo
+                where inkdwilayah in (select wil from wilayah)
+            ) c on a.inkdwil = c.inkdwilayah
+            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
 
         if vdepolp in (2) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
-            from lp_mcustomer_aarta cust
-            inner join (
-                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
-                from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
-                group by inkdwil,chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
-            where datglmulaitransaksi is not null
+            select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            from del_ppi_minsdaload a
+            left join (
+                select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+                chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+                from lp_mcustomer_aarta
+                where datglmulaitransaksi is not null and inkdwilayah in (select wil from wilayah)
+            ) b on a.chkdda = b.chkdda and a.inkdwil = b.inkdwilayah
+            left join (
+                select distinct inkdwilayah,chketwilayah
+                from lp_mdepo_aarta
+                where inkdwilayah in (select wil from wilayah)
+            ) c on a.inkdwil = c.inkdwilayah
+            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
     end if;
@@ -175,33 +185,43 @@ if 1=1 then
     if vposisi in (0) then
         if vdepolp in (0,1) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
-            from lp_mcustomer_history cust
-            inner join (
-                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
-                from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
-                group by inkdwil,chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
-            where datglmulaitransaksi is not null
-            and intahun = vtahunhistory and inbulan = vbulanhistory
+            select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            from del_ppi_minsdaload a
+            left join (
+                select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+                chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+                from lp_mcustomer_history
+                where datglmulaitransaksi is not null and inkdwilayah in (select wil from wilayah)
+                and intahun = vtahunhistory and inbulan = vbulanhistory
+            ) b on a.chkdda = b.chkdda and a.inkdwil = b.inkdwilayah
+            left join (
+                select distinct inkdwilayah,chketwilayah
+                from lp_mdepo_history
+                where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
+            ) c on a.inkdwil = c.inkdwilayah
+            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
 
         if vdepolp in (2) then
             perform insert into customer
-            select customer_key,cust.inkdwilayah,cust.chketwilayah,cust.inkdcabang,cust.chketcabang,cust.inkddepo,cust.chketdepo,cust.chkdsite,
-            chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
-            from lp_mcustomer_aarta_history cust
-            inner join (
-                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
-                from del_PPI_mInsDALoad
-                where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
-                group by inkdwil,chkdda,chkdemp
-            ) emp on cust.chkdda = emp.chkdda and cust.inkdwilayah = emp.inkdwil
-            where datglmulaitransaksi is not null
-            and intahun = vtahunhistory and inbulan = vbulanhistory
+            select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            from del_ppi_minsdaload a
+            left join (
+                select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
+                chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
+                from lp_mcustomer_aarta_history
+                where datglmulaitransaksi is not null and inkdwilayah in (select wil from wilayah)
+                and intahun = vtahunhistory and inbulan = vbulanhistory
+            ) b on a.chkdda = b.chkdda and a.inkdwil = b.inkdwilayah
+            left join (
+                select distinct inkdwilayah,chketwilayah
+                from lp_mdepo_aarta_history
+                where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
+            ) c on a.inkdwil = c.inkdwilayah
+            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
     end if;
