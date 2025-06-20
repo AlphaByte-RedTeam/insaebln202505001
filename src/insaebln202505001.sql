@@ -565,14 +565,15 @@ if 1=1 then
 
     perform create local temporary table if not exists insentiffinal
     (
-        inkdwilayah int,chkdemployee varchar(255),multiplier dec(25,6),dePctTagih dec(25,6),
+        inkdwilayah int,chkdemployee varchar(255),multiplier dec(25,6),deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),
         deInsKpBefore dec(25,6),deInsKpGlobalBefore dec(25,6),deInsLtBefore dec(25,6),deInsLbBefore dec(25,6),
         deInsKpAfter dec(25,6),deInsKpGlobalAfter dec(25,6),deInsLtAfter dec(25,6),deInsLbAfter dec(25,6),
         deTotalInsentif dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insentiffinal
-    select a.inkdwilayah,a.chkdemployee,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,isnull(pctTagih,0) pctTagih1,
+    select a.inkdwilayah,a.chkdemployee,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
+    isnull(deTarget,0) deTarget,isnull(deReal,0) deReal,isnull(pctTagih,0) pctTagih1,
     isnull(inskp,0) insKpBefore,isnull(inskpglobal,0) insKpGlobalBefore,isnull(inslt,0) insLtBefore,isnull(inslb,0) insLbBefore,
     pctTagihMultiplier1 * isnull(inskp,0)          calcInsKp,
     pctTagihMultiplier1 * isnull(inskpglobal,0)    calcInsKpGlobal,
@@ -608,7 +609,7 @@ if 1=1 then
         group by a.inkdwilayah,a.chkdemployee
     ) a
     left join (
-        select inkdwilayah,chkdemployee,
+        select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget,sum(isnull(dereal,0)) dereal,
         sum(isnull(dePercentTagih,0)) pctTagih,
         case
             when vtipeperiode in (2,3,4) and pctTagih <  0.80 then 0
@@ -751,7 +752,7 @@ if 1=1 then
     left join (
         select chkdemployee,inkdwilayah,('9'||vtipeperiode||999)::int inkdins,
         sum(isnull(deTarget,0)) deTarget,sum(isnull(deReal,0)) deReal
-        from piutangbulanan
+        from insentiffinal
         group by chkdemployee,inkdwilayah
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
