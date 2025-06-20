@@ -145,7 +145,7 @@ if 1=1 then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
             chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
-            from del_ppi_minsdaload a
+            from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
                 chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
@@ -155,7 +155,7 @@ if 1=1 then
             left join (
                 select distinct inkdwilayah,chketwilayah
                 from lp_mdepo
-                where inkdwilayah in (select wil from wilayah)
+                where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
@@ -165,7 +165,7 @@ if 1=1 then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
             chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
-            from del_ppi_minsdaload a
+            from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
                 chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
@@ -175,7 +175,7 @@ if 1=1 then
             left join (
                 select distinct inkdwilayah,chketwilayah
                 from lp_mdepo_aarta
-                where inkdwilayah in (select wil from wilayah)
+                where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
@@ -187,7 +187,7 @@ if 1=1 then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
             chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
-            from del_ppi_minsdaload a
+            from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
                 chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
@@ -199,6 +199,7 @@ if 1=1 then
                 select distinct inkdwilayah,chketwilayah
                 from lp_mdepo_history
                 where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
+                and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
@@ -208,7 +209,7 @@ if 1=1 then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
             chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
-            from del_ppi_minsdaload a
+            from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
                 chkdcustomer,chnamacustomer,chkdda,datglmulaitransaksi
@@ -220,6 +221,7 @@ if 1=1 then
                 select distinct inkdwilayah,chketwilayah
                 from lp_mdepo_aarta_history
                 where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
+                and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
@@ -265,9 +267,9 @@ if 1=1 then
     deTarget deQtyTarget,null deRpNetto,null loCustomerBaru
     from (
         select chketproduk,deTarget,chproduk
-        from del_PPI_mInsTargetLoad
+        from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('KP')
-        and intahun = vtahun and inbulan = vbulan and inkdwil in (select wil from wilayah)
+        and intahun = vtahun and inbulan = 5 and inkdwil in (select wil from wilayah)
     ) a
     ;
 
@@ -278,9 +280,9 @@ if 1=1 then
     deTarget deQtyTarget,null deRpNetto,null loCustomerBaru
     from (
         select deTarget,chproduk,chketproduk
-        from del_PPI_mInsTargetLoad
+        from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('T')
-        and intahun = vtahun and inbulan = vbulan and inkdwil in (select wil from wilayah)
+        and intahun = vtahun and inbulan = 5 and inkdwil in (select wil from wilayah)
     ) a
     ;
 
@@ -532,8 +534,8 @@ if 1=1 then
 
     perform insert into piutangbulanan
     select inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer,
-    sum(deNilaiFaktur) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
-    sum(deTargetMonth) deTarget,sum(deBayarMonth) deReal
+    sum(isnull(deNilaiFaktur,0)) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
+    sum(isnull(deTargetMonth,0)) deTarget,sum(isnull(deBayarMonth,0)) deReal
     from lp_tpiutang a
     inner join (
         select customer_key,inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer from customer
@@ -697,7 +699,7 @@ if 1=1 then
     left join (
         -- omset kp
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||600)::int inkdins,sum(totalins) totalIns
+        (vtipeperiode||600)::int inkdins,sum(isnull(totalins,0)) totalIns
         from insomsetkp
         group by chkdemployee,inkdwilayah
 
@@ -705,7 +707,7 @@ if 1=1 then
 
         -- omset KP global
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||601)::int inkdins,sum(totalins)
+        (vtipeperiode||601)::int inkdins,sum(isnull(totalins,0))
         from insomsetkpglobal
         group by chkdemployee,inkdwilayah
 
@@ -713,7 +715,7 @@ if 1=1 then
 
         -- LT Omset
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||602)::int inkdins,sum(totalins)
+        (vtipeperiode||602)::int inkdins,sum(isnull(totalins,0))
         from insentiflt
         group by chkdemployee,inkdwilayah
 
@@ -721,7 +723,7 @@ if 1=1 then
 
         -- LB Omset
         select chkdemployee,inkdwilayah,
-        (vtipeperiode||603)::int inkdins,sum(totalinslb)
+        (vtipeperiode||603)::int inkdins,sum(isnull(totalinslb,0))
         from insentiflb
         group by chkdemployee,inkdwilayah
 
@@ -741,7 +743,7 @@ if 1=1 then
     ) a
     left join (
         select chkdemployee,inkdwilayah,(vtipeperiode||999)::int inkdins,
-        sum(deTarget) deTarget,sum(deReal) deReal
+        sum(isnull(deTarget,0)) deTarget,sum(isnull(deReal,0)) deReal
         from piutangbulanan
         group by chkdemployee,inkdwilayah
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
@@ -759,22 +761,22 @@ if 1=1 then
         from customer
     ) a
     left join (
-        select inkdwilayah,chkdemployee,depcttagih,deinskp deInsFinal,(vtipeperiode||600)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0) depcttagih,isnull(deinskp,0) deInsFinal,(vtipeperiode||600)::int inkdins
         from insentiffinal
 
         union all
 
-        select inkdwilayah,chkdemployee,depcttagih,deinskpglobal,(vtipeperiode||601)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinskpglobal,0),(vtipeperiode||601)::int inkdins
         from insentiffinal
 
         union all
 
-        select inkdwilayah,chkdemployee,depcttagih,deinslt,(vtipeperiode||602)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinslt,0),(vtipeperiode||602)::int inkdins
         from insentiffinal
 
         union all
 
-        select inkdwilayah,chkdemployee,depcttagih,deinslb,(vtipeperiode||603)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinslb,0),(vtipeperiode||603)::int inkdins
         from insentiffinal
 
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
@@ -792,7 +794,7 @@ if 1=1 then
         from customer
     ) a
     left join (
-        select inkdwilayah,chkdemployee,multiplier,dePctTagih,(vtipeperiode||999)::int inkdins
+        select inkdwilayah,chkdemployee,isnull(multiplier,0) multiplier,isnull(dePctTagih,0) depcttagih,(vtipeperiode||999)::int inkdins
         from insentiffinal
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
@@ -855,7 +857,7 @@ if 1=1 then
 end if;
 end;
 $$
--- TODO: change table with del_ to regular table
+-- TODO: Change the hardcoded inbulan value in ppi_minstargetload to use vbulan
 
 -- NOTE: Testing pakai call SP berikut:
 -- AE, wil 1, thn 2025, bln 6
