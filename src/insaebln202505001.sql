@@ -147,7 +147,7 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer cust
             inner join (
-                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
                 group by inkdwil,chkdda,chkdemp
@@ -162,7 +162,7 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,chNamaEmp,datglmulaitransaksi
             from lp_mcustomer_aarta cust
             inner join (
-                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
                 group by inkdwil,chkdda,chkdemp
@@ -179,7 +179,7 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_history cust
             inner join (
-                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
                 group by inkdwil,chkdda,chkdemp
@@ -195,7 +195,7 @@ if 1=1 then
             chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemployee,cust.chkdda,datglmulaitransaksi
             from lp_mcustomer_aarta_history cust
             inner join (
-                select distinct inkdwil,chkdda,'9'||chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
+                select distinct inkdwil,chkdda,chkdemp chkdemployee,max(isnull(chNamaEmp,'N/A')) chNamaEmp
                 from del_PPI_mInsDALoad
                 where chJabatan in (vketemployee) and chDivisi in ('B2B') and inkdwil in (select wil from wilayah)
                 group by inkdwil,chkdda,chkdemp
