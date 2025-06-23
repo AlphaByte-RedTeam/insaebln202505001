@@ -157,7 +157,7 @@ if 1=1 then
                 from lp_mdepo
                 where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
-            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
 
@@ -177,7 +177,7 @@ if 1=1 then
                 from lp_mdepo_aarta
                 where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
-            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
     end if;
@@ -201,7 +201,7 @@ if 1=1 then
                 where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
                 and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
-            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
 
@@ -223,7 +223,7 @@ if 1=1 then
                 where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
                 and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
-            where chjabatan in ('AE') and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             ;
         end if;
     end if;
@@ -269,7 +269,7 @@ if 1=1 then
         select chketproduk,deTarget,chproduk
         from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('KP')
-        and intahun = vtahun and inbulan = 5 and inkdwil in (select wil from wilayah)
+        and intahun = vtahun and inbulan = vbulan and inkdwil in (select wil from wilayah)
     ) a
     ;
 
@@ -282,7 +282,7 @@ if 1=1 then
         select deTarget,chproduk,chketproduk
         from PPI_mInsTargetLoad
         where chJabatan in (vketemployee) and chproduk in ('T')
-        and intahun = vtahun and inbulan = 5 and inkdwil in (select wil from wilayah)
+        and intahun = vtahun and inbulan = vbulan and inkdwil in (select wil from wilayah)
     ) a
     ;
 
@@ -865,7 +865,6 @@ if 1=1 then
 end if;
 end;
 $$
--- TODO: Change the hardcoded inbulan value in ppi_minstargetload to use vbulan
 
 -- NOTE: Testing pakai call SP berikut:
 -- AE, wil 1, thn 2025, bln 6
