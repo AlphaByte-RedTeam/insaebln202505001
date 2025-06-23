@@ -158,6 +158,7 @@ if 1=1 then
                 where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            and intahun = vtahun and inbulan = vbulan
             ;
         end if;
 
@@ -178,6 +179,7 @@ if 1=1 then
                 where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            and intahun = vtahun and inbulan = vbulan
             ;
         end if;
     end if;
@@ -202,6 +204,7 @@ if 1=1 then
                 and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            and intahun = vtahun and inbulan = vbulan
             ;
         end if;
 
@@ -224,6 +227,7 @@ if 1=1 then
                 and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            and intahun = vtahun and inbulan = vbulan
             ;
         end if;
     end if;
