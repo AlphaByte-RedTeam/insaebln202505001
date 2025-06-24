@@ -137,14 +137,16 @@ if 1=1 then
     (
         customer_key int,inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),
         inkddepo int,chketdepo varchar(255),chkdsite varchar(255),chkdcustomer varchar(255),chnamacustomer varchar(255),
-        chkdemployee varchar(255),chkdda varchar(255),chNamaEmp varchar(255),datglmulaitransaksi date
+        chkdemployee varchar(255),chNamaEmp varchar(255),chkdemployeepejabat varchar(255),chNamaEmpPejabat varchar(255),
+        chkdemployeeAE varchar(255),chNamaEmpAE varchar(255),chkdda varchar(255),datglmulaitransaksi date
     ) on commit preserve rows;
 
     if vposisi in (1) then
         if vdepolp in (0,1) then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
-            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp kdEmpPilihan,isnull(chnamaemp,'N/A') namaEmpPilihan,
+            empAAM,isnull(namaAAM,'N/A') namaAAM,empAE,isnull(namaAE,'N/A') namaAE,a.chkdda,datglmulaitransaksi
             from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
@@ -157,6 +159,19 @@ if 1=1 then
                 from lp_mdepo
                 where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
+            left join (
+                select chkdda,inkdwil,
+                max(case when chjabatan = 'AE' then chkdemp else null end) empAE,
+                max(case when chjabatan = 'AE' then chnamaemp else null end) namaAE,
+                max(case when chjabatan = 'AAM' then chkdemp else null end) empAAM,
+                max(case when chjabatan = 'AAM' then chnamaemp else null end) namaAAM,
+                max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
+                max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
+                from ppi_minsdaload
+                where chdivisi in ('B2B') and
+                inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
+                group by chkdda,inkdwil
+            ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
@@ -165,7 +180,8 @@ if 1=1 then
         if vdepolp in (2) then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
-            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp kdEmpPilihan,isnull(chnamaemp,'N/A') namaEmpPilihan,
+            empAAM,isnull(namaAAM,'N/A') namaAAM,empAE,isnull(namaAE,'N/A') namaAE,a.chkdda,datglmulaitransaksi
             from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
@@ -178,6 +194,19 @@ if 1=1 then
                 from lp_mdepo_aarta
                 where inkdwilayah in (select wil from wilayah) and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
+            left join (
+                select chkdda,inkdwil,
+                max(case when chjabatan = 'AE' then chkdemp else null end) empAE,
+                max(case when chjabatan = 'AE' then chnamaemp else null end) namaAE,
+                max(case when chjabatan = 'AAM' then chkdemp else null end) empAAM,
+                max(case when chjabatan = 'AAM' then chnamaemp else null end) namaAAM,
+                max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
+                max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
+                from ppi_minsdaload
+                where chdivisi in ('B2B') and
+                inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
+                group by chkdda,inkdwil
+            ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
@@ -188,7 +217,8 @@ if 1=1 then
         if vdepolp in (0,1) then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
-            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp kdEmpPilihan,isnull(chnamaemp,'N/A') namaEmpPilihan,
+            empAAM,isnull(namaAAM,'N/A') namaAAM,empAE,isnull(namaAE,'N/A') namaAE,a.chkdda,datglmulaitransaksi
             from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
@@ -203,6 +233,19 @@ if 1=1 then
                 where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
                 and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
+            left join (
+                select chkdda,inkdwil,
+                max(case when chjabatan = 'AE' then chkdemp else null end) empAE,
+                max(case when chjabatan = 'AE' then chnamaemp else null end) namaAE,
+                max(case when chjabatan = 'AAM' then chkdemp else null end) empAAM,
+                max(case when chjabatan = 'AAM' then chnamaemp else null end) namaAAM,
+                max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
+                max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
+                from ppi_minsdaload
+                where chdivisi in ('B2B') and
+                inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
+                group by chkdda,inkdwil
+            ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
@@ -211,7 +254,8 @@ if 1=1 then
         if vdepolp in (2) then
             perform insert into customer
             select customer_key,a.inkdwil,isnull(b.chketwilayah,c.chketwilayah),inkdcabang,chketcabang,inkddepo,chketdepo,
-            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp,a.chkdda,chnamaemp,datglmulaitransaksi
+            chkdsite,chkdcustomer,isnull(chnamacustomer,'N/A') namaCust,chkdemp kdEmpPilihan,isnull(chnamaemp,'N/A') namaEmpPilihan,
+            empAAM,isnull(namaAAM,'N/A') namaAAM,empAE,isnull(namaAE,'N/A') namaAE,a.chkdda,datglmulaitransaksi
             from PPI_mInsDALoad a
             left join (
                 select customer_key,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,chkdsite,
@@ -226,6 +270,19 @@ if 1=1 then
                 where inkdwilayah in (select wil from wilayah) and intahun = vtahunhistory and inbulan = vbulanhistory
                 and chtipedepo = 'DPO' and loenabled = 1
             ) c on a.inkdwil = c.inkdwilayah
+            left join (
+                select chkdda,inkdwil,
+                max(case when chjabatan = 'AE' then chkdemp else null end) empAE,
+                max(case when chjabatan = 'AE' then chnamaemp else null end) namaAE,
+                max(case when chjabatan = 'AAM' then chkdemp else null end) empAAM,
+                max(case when chjabatan = 'AAM' then chnamaemp else null end) namaAAM,
+                max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
+                max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
+                from ppi_minsdaload
+                where chdivisi in ('B2B') and
+                inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
+                group by chkdda,inkdwil
+            ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
             where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
@@ -414,15 +471,19 @@ if 1=1 then
         group by inkdwilayah,chkdemployee
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     cross join (
-        select sum(isnull(deQtyNetto,0)) deQtyTarget,chkp
-        from prelistlt
-        where inTipeOms in (1)
+        select sum(deqtytarget) deqtytarget,chkp
+        from (
+            select sum(isnull(deQtyNetto,0)) deQtyTarget,chkp
+            from prelistlt
+            where inTipeOms in (1)
+            group by chkp
+
+            union all
+
+            select distinct 0 deqtytarget,'0' chkp
+            from lp_msetkpi
+        ) a
         group by chkp
-
-        union all
-
-        select sum(0),'0' chkp
-        from lp_msetkpi
     ) c
     group by a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemp,chkp,deQtyTarget,deQtyOmset,deRpOmset
     ;
