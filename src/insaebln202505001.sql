@@ -63,6 +63,16 @@ if 1=1 then
         when vtipeperiode in (2) then 'AE'
         when vtipeperiode in (3) then 'AAM'
         when vtipeperiode in (4) then 'RBM'
+        -- DIVISI SOBAT
+        -- TODO: Change jabatan in SOBAT division
+        when vtipeperiode in (5) then 'UNKNOWN'
+        when vtipeperiode in (6) then 'UNKNOWN'
+        when vtipeperiode in (7) then 'UNKNOWN'
+        -- EOL DIVISI SOBAT
+        when vtipeperiode in (8) then 'AAM' -- ODS
+        when vtipeperiode in (9) then 'SDM'
+        when vtipeperiode in (10) then 'AAM' -- HDS
+        when vtipeperiode in (11) then 'RBM'
     end;
 
     vdivisi :=
