@@ -38,7 +38,7 @@ declare
 
     vEntity varchar(255);
 
-    stdInsCA int;
+    stdInsLT int;
     stdInsNOC int;
     maxdate date;
     errCode VARCHAR(255);
@@ -88,7 +88,7 @@ if 1=1 then
         when vposisi in (1) then 'Current'
     end;
 
-    stdInsCA := 120 * 0.8;
+    stdInsLT := 120 * 0.8;
     stdInsNOC := 10;
 
     maxdate := select max(datglcutoff) from lp_tpiutang where year(datglcutoff) = vtahun and month(datglcutoff) = vbulan;
@@ -617,15 +617,15 @@ if 1=1 then
     end totalInsRBM
     from(
         select inkdwilayah,chkdemployee,chkdemployeeAAM,
-        sum(case when isnull(inJumlahLt,0) >= 96 then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
-        sum(case when isnull(inJumlahLt,0) >= 96 then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
-        sum(case when isnull(inJumlahLt,0) >= 96 then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
         (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
         from (
             select inkdwilayah,chkdemployee,chkdemployeeAAM,
-            count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
-            count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
-            count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
             (inlt50010 + inlt1050 + inlt50up) inJumlahLT
             from listlt
             group by inkdwilayah,chkdemployee,chkdemployeeAAM
