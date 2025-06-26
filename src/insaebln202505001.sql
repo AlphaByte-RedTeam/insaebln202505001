@@ -435,20 +435,18 @@ if 1=1 then
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,
         sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
         case
+            when vtipeperiode in (2,3,4,5,6,7,8,9,10,11) and isnull(percentQtyNetto1,0) < 0.80 then 0
             -- AE
-            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.80 then 0
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0015
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0060
 
             -- AAM
-            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.80 then 0
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0030
 
             -- RBM
-            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.80 then 0
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0008
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0012
