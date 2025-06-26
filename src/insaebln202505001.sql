@@ -40,12 +40,6 @@ declare
     stdInsCA int;
     stdInsNOC int;
     maxdate date;
-
-    vPath varchar(255);
-    mysetdir varchar(255);
-    vnmfile2 varchar(255);
-    vfile2 varchar(255);
-
     errCode VARCHAR(255);
 
 begin
@@ -53,12 +47,6 @@ if 1=1 then
     vEntity := SELECT chvalue FROM lp_mreportfilter WHERE chkey = 'db';
 
     nosurat := '001-CEO-PPI-V-25';
-
-    MySetDir := '/dwh/'||vEntity||'/report/rutin/insentif/insaebln202505001/'||vnama||'.csv';
-
-    vPath := SUBSTR(MySetDir,1,INSTR(MySetDir, '/', -1)-1);
-    vnmfile2 := vPath||'/'||vuser||'-Loadins-1-'||vreqkey||'-'||vdate||'.txt';
-    vFile2 := REPLACE(SUBSTR(vnmfile2,INSTR(vnmfile2, '/', -1)+1),'.txt','');
 
     waktusaatini := select now();
 
@@ -316,14 +304,14 @@ if 1=1 then
     perform create local temporary table if not exists prelistlt
     (
         inTipeOms int,intahun int,inbulan int,inkdwilayah int,inkdcabang int,inkddepo int,
-        chkdemployee varchar(255),chNamaEmp varchar(255),
-        chkdcustomer varchar(255),chNamaCustomer varchar(255),chTipeKp varchar(255),chkp varchar(255),inTahunMulaiTrx int,inBulanMulaiTrx int,
-        deQtyNetto dec(25,6),deRpNetto dec(25,6),loCustomerBaru boolean
+        chkdemployee varchar(255),chNamaEmp varchar(255),chkdemployeeAAM varchar(255),chnamaempAAM varchar(255),
+        chkdcustomer varchar(255),chNamaCustomer varchar(255),chTipeKp varchar(255),chkp varchar(255),
+        inTahunMulaiTrx int,inBulanMulaiTrx int,deQtyNetto dec(25,6),deRpNetto dec(25,6),loCustomerBaru boolean
     ) on commit preserve rows;
 
     perform insert into prelistlt
     select 0 inTipeOms,null intahun,null inbulan,null inkdwilayah,null inkdcabang,null inkddepo,
-    null chkdemployee,null chNamaEmp,
+    null chkdemployee,null chNamaEmp,null chkdemployeeAAM,null chnamaemp,
     null chkdcustomer,null chNamaCustomer,chproduk chTipeKp,chketproduk chkp,null inTahunMulaiTrx,null inBulanMulaiTrx,
     deTarget deQtyTarget,null deRpNetto,null loCustomerBaru
     from (
@@ -336,7 +324,7 @@ if 1=1 then
 
     perform insert into prelistlt
     select 1 inTipeOms,null intahun,null inbulan,null inkdwilayah,null inkdcabang,null inkddepo,
-    null chkdemployee,null chNamaEmp,
+    null chkdemployee,null chNamaEmp,null chkdemployeeAAM,null chnamaemp,
     null chkdcustomer,null chNamaCustomer,chproduk chTipeKp,chketproduk chkp,null inTahunMulaiTrx,null inBulanMulaiTrx,
     deTarget deQtyTarget,null deRpNetto,null loCustomerBaru
     from (
@@ -349,7 +337,7 @@ if 1=1 then
 
     perform insert into prelistlt
     select 2 inTipeOms,intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,
-    chkdemployee,chNamaEmp,
+    chkdemployee,chNamaEmp,chkdemployeepejabat kdEmpAAM,chNamaEmpPejabat nmEmpAAM,
     chkdcustomer,chNamaCustomer,null chtipekp,chkp,inTahunMulaiTrx,inBulanMulaiTrx,
     sum(deqtynetto/inkdkonvbesarid) deqtynetto1,sum(derpnetto) derpnetto,
     case when inTahunMulaiTrx = inTahun and inBulanMulaiTrx = inBulan then 1 else 0 end loCustomerBaru
@@ -359,7 +347,8 @@ if 1=1 then
         where intahun = vtahun and inbulan = vbulan
     ) a
     inner join (
-        select customer_key,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,chkdcustomer,chNamaCustomer,
+        select customer_key,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,
+        chkdcustomer,chNamaCustomer,chkdemployeepejabat,chNamaEmpPejabat,
         year(datglmulaitransaksi::date) inTahunMulaiTrx,month(datglmulaitransaksi::date)inBulanMulaiTrx
         from customer
         where inkdwilayah in (select wil from wilayah)
@@ -368,7 +357,7 @@ if 1=1 then
         select product_key,chkp,isnull(inkdkonvbesarid,0) inkdkonvbesarid
         from produkPPI
     ) c on a.product_key = c.product_key
-    group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,
+    group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,kdEmpAAM,nmEmpAAM,
     chkdcustomer,chNamaCustomer,chkp,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
     ;
 
@@ -529,42 +518,53 @@ if 1=1 then
 
     perform create local temporary table if not exists listlt
     (
-        inkdwilayah int,chkdemployee varchar(255),chnamaemp varchar(255),
+        inkdwilayah int,chkdemployee varchar(255),chnamaemp varchar(255),chkdemployeeAAM varchar(255),chnamaempAAM varchar(255),
         chkdcustomer varchar(255),chnamacustomer varchar(255),chkp varchar(255),
         inTahunMulaiTrx int,inBulanMulaiTrx int,loCustomerBaru boolean,
         deQtyOmset dec(25,6),deRpOmset dec(25,6)
     ) on commit preserve rows;
 
     perform insert into listlt
-    select inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer,
+    select inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,chkdcustomer,chnamacustomer,
     chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru,
     sum(deQtyNetto) deQtyOmset,sum(deRpNetto) deRpOmset
     from prelistlt
     where inTipeOms in (2)
-    group by inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer,
+    group by inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,chkdcustomer,chnamacustomer,
     chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru
     ;
 
     perform create local temporary table if not exists insentiflt
     (
-        inkdwilayah int,chkdemployee varchar(255),
+        inkdwilayah int,chkdemployee varchar(255),totalAAMIns int,
         deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalIns dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insentiflt
     select inkdwilayah,chkdemployee,
-    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
-    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
-    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLt,0) >= stdInsCA then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
-    (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
-    from (
-        select inkdwilayah,chkdemployee,
-        count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
-        count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
-        count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
-        (inlt50010 + inlt1050 + inlt50up) inJumlahLT
-        from listlt
-        group by inkdwilayah,chkdemployee
+    count(distinct case when (totalIns > 0) then chkdemployeeAAM else null end) totalAAMIns,
+    sum(isnull(deTarifLt50010,0)) deTarifLt50010,sum(isnull(deTarifLt1050,0)) deTarifLt1050,sum(isnull(deTarifLt50up,0)) deTarifLt50up,
+    case
+        when vtipeperiode in (2,3) then sum(totalIns)
+        when vtipeperiode in (4)   then (250000.00 * totalAAMins)
+        else 0
+    end totalInsRBM
+    from(
+        select inkdwilayah,chkdemployee,chkdemployeeAAM,
+        sum(case when isnull(inJumlahLt,0) >= 96 then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+        sum(case when isnull(inJumlahLt,0) >= 96 then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+        sum(case when isnull(inJumlahLt,0) >= 96 then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+        (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
+        from (
+            select inkdwilayah,chkdemployee,chkdemployeeAAM,
+            count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+            count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+            count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+            (inlt50010 + inlt1050 + inlt50up) inJumlahLT
+            from listlt
+            group by inkdwilayah,chkdemployee,chkdemployeeAAM
+        ) a
+        group by inkdwilayah,chkdemployee,chkdemployeeAAM
     ) a
     group by inkdwilayah,chkdemployee
     ;
