@@ -179,11 +179,11 @@ if 1=1 then
                 max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
                 max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
                 from ppi_minsdaload
-                where chdivisi in ('B2B') and
+                where chdivisi in (vdivisi) and
                 inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
                 group by chkdda,inkdwil
             ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
-            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in (vdivisi) and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
         end if;
@@ -214,11 +214,11 @@ if 1=1 then
                 max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
                 max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
                 from ppi_minsdaload
-                where chdivisi in ('B2B') and
+                where chdivisi in (vdivisi) and
                 inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
                 group by chkdda,inkdwil
             ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
-            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in (vdivisi) and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
         end if;
@@ -253,11 +253,11 @@ if 1=1 then
                 max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
                 max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
                 from ppi_minsdaload
-                where chdivisi in ('B2B') and
+                where chdivisi in (vdivisi) and
                 inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
                 group by chkdda,inkdwil
             ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
-            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in (vdivisi) and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
         end if;
@@ -290,11 +290,11 @@ if 1=1 then
                 max(case when chjabatan = 'RBM' then chkdemp else null end) empRBM,
                 max(case when chjabatan = 'RBM' then chnamaemp else null end) namaRBM
                 from ppi_minsdaload
-                where chdivisi in ('B2B') and
+                where chdivisi in (vdivisi) and
                 inkdwil in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan
                 group by chkdda,inkdwil
             ) d on a.inkdwil = d.inkdwil and a.chkdda = d.chkdda
-            where chjabatan in (vketemployee) and chdivisi in ('B2B') and a.inkdwil in (select wil from wilayah)
+            where chjabatan in (vketemployee) and chdivisi in (vdivisi) and a.inkdwil in (select wil from wilayah)
             and intahun = vtahun and inbulan = vbulan
             ;
         end if;
