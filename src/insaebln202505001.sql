@@ -32,6 +32,7 @@ declare
 
     charea varchar(255);
     vketemployee varchar(255);
+    vdivisi varchar(255);
     vketposisi varchar(255);
     waktusaatini timestamp;
 
@@ -52,7 +53,6 @@ if 1=1 then
         when vtipeperiode in (5,6,7)     then '002-CEO-PPI-V-25'
         when vtipeperiode in (8,9,10,11) then '003-CEO-PPI-V-25'
     end;
-    ;
 
     waktusaatini := select now();
 
@@ -63,6 +63,13 @@ if 1=1 then
         when vtipeperiode in (2) then 'AE'
         when vtipeperiode in (3) then 'AAM'
         when vtipeperiode in (4) then 'RBM'
+    end;
+
+    vdivisi :=
+    case
+        when vtipeperiode in (2,3,4)     then 'B2B'
+        when vtipeperiode in (5,6,7)     then 'SOBAT'
+        when vtipeperiode in (8,9,10,11) then 'WATER'
     end;
 
     vketposisi :=
