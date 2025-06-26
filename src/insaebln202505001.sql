@@ -46,7 +46,13 @@ begin
 if 1=1 then
     vEntity := SELECT chvalue FROM lp_mreportfilter WHERE chkey = 'db';
 
-    nosurat := '001-CEO-PPI-V-25';
+    nosurat :=
+    case
+        when vtipeperiode in (2,3,4)     then '001-CEO-PPI-V-25'
+        when vtipeperiode in (5,6,7)     then '002-CEO-PPI-V-25'
+        when vtipeperiode in (8,9,10,11) then '003-CEO-PPI-V-25'
+    end;
+    ;
 
     waktusaatini := select now();
 
