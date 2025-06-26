@@ -435,7 +435,10 @@ if 1=1 then
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,
         sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
         case
+            -- cover all employees (jabatan) that achieve sales vs target per product is less than 80%
             when vtipeperiode in (2,3,4,5,6,7,8,9,10,11) and isnull(percentQtyNetto1,0) < 0.80 then 0
+
+            -- B2B DIVISION
             -- AE
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0015
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
@@ -450,6 +453,48 @@ if 1=1 then
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0008
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0012
+
+            -- =======================================================================================
+
+            -- SOBAT DIVISION -- TODO: Update tariffs incentive SOBAT DIVISION
+            -- KOORD CAPTAIN
+            when vtipeperiode in (5) and isnull(percentQtyNetto1,0) < 0.90 then 0.0012
+            when vtipeperiode in (5) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
+            when vtipeperiode in (5) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0060
+
+            -- AREA KOORDINATOR CAPTAIN
+            when vtipeperiode in (6) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
+            when vtipeperiode in (6) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
+            when vtipeperiode in (6) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0030
+
+            -- SOBAT DEVELOPMENT MANAGER -- Tim CAPTAIN
+            when vtipeperiode in (7) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
+            when vtipeperiode in (7) and isnull(percentQtyNetto1,0) < 1.00 then 0.0007
+            when vtipeperiode in (7) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0010
+
+            -- =======================================================================================
+
+            -- WATER DIVISION
+            -- AAM ODS
+            when vtipeperiode in (8) and isnull(percentQtyNetto1,0) < 0.90 then 0.0008
+            when vtipeperiode in (8) and isnull(percentQtyNetto1,0) < 1.00 then 0.0015
+            when vtipeperiode in (8) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0020
+
+            -- SDM
+            when vtipeperiode in (9) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
+            when vtipeperiode in (9) and isnull(percentQtyNetto1,0) < 1.00 then 0.0006
+            when vtipeperiode in (9) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0010
+
+            -- AAM HDS
+            when vtipeperiode in (10) and isnull(percentQtyNetto1,0) < 0.90 then 0.0008
+            when vtipeperiode in (10) and isnull(percentQtyNetto1,0) < 1.00 then 0.0015
+            when vtipeperiode in (10) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0020
+
+            -- RBM
+            when vtipeperiode in (11) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
+            when vtipeperiode in (11) and isnull(percentQtyNetto1,0) < 1.00 then 0.0006
+            when vtipeperiode in (11) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0010
+
             else 0
         end pctQtyNettoMultiplier
         from tempomsetkp
