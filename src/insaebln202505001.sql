@@ -1,4 +1,4 @@
-create or replace procedure RPT_insaebln202505001
+create or replace procedure dev_RPT_insaebln202505001
 (
     vnama varchar(512),
     vlokasi varchar(255),
@@ -88,7 +88,11 @@ if 1=1 then
         when vposisi in (1) then 'Current'
     end;
 
-    stdInsLT := 120 * 0.8;
+    stdInsLT :=
+    case
+        when vtipeperiode in (2,3,4,8) then 120 * 0.8
+        when vtipeperiode in (9,10,11) then 120
+    end;
     stdInsNOC := 10;
 
     maxdate := select max(datglcutoff) from lp_tpiutang where year(datglcutoff) = vtahun and month(datglcutoff) = vbulan;
@@ -611,8 +615,8 @@ if 1=1 then
     count(distinct case when (totalIns > 0) then chkdemployeeAAM else null end) totalAAMIns,
     sum(isnull(deTarifLt50010,0)) deTarifLt50010,sum(isnull(deTarifLt1050,0)) deTarifLt1050,sum(isnull(deTarifLt50up,0)) deTarifLt50up,
     case
-        when vtipeperiode in (2,3) then sum(totalIns)
-        when vtipeperiode in (4)   then (250000.00 * totalAAMins)
+        when vtipeperiode in (2,3,8) then sum(totalIns)
+        when vtipeperiode in (4)     then (250000.00 * totalAAMins)
         else 0
     end totalInsRBM
     from(
@@ -632,6 +636,29 @@ if 1=1 then
         ) a
         group by inkdwilayah,chkdemployee,chkdemployeeAAM
     ) a
+    where vtipeperiode in (2,3,4,8)
+    group by inkdwilayah,chkdemployee
+    ;
+
+    perform insert into insentiflt
+    select inkdwilayah,chkdemployee,null totalAAMIns,
+    null deTarifLt50010,null deTarifLt1050,null deTarifLt50up,
+    sum(isnull(totalins,0)) totalInsSDMWater
+    from (
+        select inkdwilayah,chkdemployee,chkdemployeeAAM,
+        sum(case when isnull(pctLT,0) > 0.80 and isnull(pctLT,0) < 0.95 then 200000 else 0 end) deTarifLt8095,
+        sum(case when isnull(pctLT,0) >= 0.95 then 300000 else 0 end) deTarifLt95up,
+        (deTarifLt8095 + deTarifLt95up) totalIns
+        from (
+            select inkdwilayah,chkdemployee,chkdemployeeAAM,
+            count(distinct case when isnull(deRpOmset,0) > 0 then chkdcustomer end) inlt,
+            (inlt / stdInsLT) pctLT
+            from listlt
+            group by inkdwilayah,chkdemployee,chkdemployeeAAM
+        ) a
+        group by inkdwilayah,chkdemployee,chkdemployeeAAM
+    ) a
+    where vtipeperiode in (9)
     group by inkdwilayah,chkdemployee
     ;
 
@@ -938,60 +965,60 @@ if 1=1 then
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
-    perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
-
-    begin
-        errCode := '00000';
-        perform delete from PPI_tInsTrxDetil
-        where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan and
-        inkdtypeins = vtipeperiode and left(chnosurat,3)::int = left(nosurat,3)::int
-        ;
-
-        perform insert into PPI_tInsTrxDetil
-        (
-            chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
-            inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
-            chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
-            deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
-        )
-        select chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
-        inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
-        chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
-        deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
-        from list_detail
-        ;
-
-        perform delete from lp_tinsrekap_hrd
-        where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan and
-        inkdtypeins = vtipeperiode and left(chnosurat,3)::int = left(nosurat,3)::int
-        ;
-
-        perform insert into lp_tinsrekap_hrd
-        (
-            chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,
-            inTahun,inperiode,inpekan,inpekantahun,inbulan,inkdtypeins,inkdins,
-            chkdda,chkdemployee,chketda,chketemployee,
-            deinsentif,chnosurat,locurrent,inkdteamda,chUserCreated,dacreated,intgl,deinshangus
-        )
-        select chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,
-        inTahun,inperiode,inpekan,inpekantahun,inbulan,inkdtypeins,inkdins,
-        chkdda,chkdemployee,chketda,chketemployee,
-        deinsentif,chnosurat,locurrent,inkdteamda,chUserCreated,dacreated,intgl,deinshangus
-        from vinsrekap
-        ;
-
-        EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS errCode := RETURNED_SQLSTATE;
-    end;
-
-    if errCode <> '00000' then
-        perform rollback;
-        perform call SPS_Ins_Loging(1,'INSPPI',0,'Failed RPT_insaebln2025050001'||waktusaatini,errCode);
-    else
-        perform commit;
-        perform call SPS_Ins_Loging(1,'INSPPI',0,'Success RPT_insaebln2025050001'||waktusaatini,errCode);
-    end if;
-
-    perform call SPS_Ins_Loging(1,'INSPPI',0,'End Insert RPT_insaebln2025050001'||waktusaatini,'00000');
+--     perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
+--
+--     begin
+--         errCode := '00000';
+--         perform delete from PPI_tInsTrxDetil
+--         where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan and
+--         inkdtypeins = vtipeperiode and left(chnosurat,3)::int = left(nosurat,3)::int
+--         ;
+--
+--         perform insert into PPI_tInsTrxDetil
+--         (
+--             chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+--             inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+--             chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+--             deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+--         )
+--         select chnosurat,intipe,intahun,inbulan,inperiode,inpekan,
+--         inkdwilayah,inkdcabang,inkddepo,chkdsite,inkdtypeins,chkettypeins,
+--         chempid,chketemp,chkdcustomer,locustomerbaru,chkp,chnofaktur,datgljt,
+--         deqtynetto,derpnetto,detarget,dereal,dacreated,chketcustomer
+--         from list_detail
+--         ;
+--
+--         perform delete from lp_tinsrekap_hrd
+--         where inkdwilayah in (select wil from wilayah) and intahun = vtahun and inbulan = vbulan and
+--         inkdtypeins = vtipeperiode and left(chnosurat,3)::int = left(nosurat,3)::int
+--         ;
+--
+--         perform insert into lp_tinsrekap_hrd
+--         (
+--             chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,
+--             inTahun,inperiode,inpekan,inpekantahun,inbulan,inkdtypeins,inkdins,
+--             chkdda,chkdemployee,chketda,chketemployee,
+--             deinsentif,chnosurat,locurrent,inkdteamda,chUserCreated,dacreated,intgl,deinshangus
+--         )
+--         select chkdsite,inkdwilayah,chketwilayah,inkdcabang,chketcabang,inkddepo,chketdepo,
+--         inTahun,inperiode,inpekan,inpekantahun,inbulan,inkdtypeins,inkdins,
+--         chkdda,chkdemployee,chketda,chketemployee,
+--         deinsentif,chnosurat,locurrent,inkdteamda,chUserCreated,dacreated,intgl,deinshangus
+--         from vinsrekap
+--         ;
+--
+--         EXCEPTION WHEN OTHERS THEN GET STACKED DIAGNOSTICS errCode := RETURNED_SQLSTATE;
+--     end;
+--
+--     if errCode <> '00000' then
+--         perform rollback;
+--         perform call SPS_Ins_Loging(1,'INSPPI',0,'Failed RPT_insaebln2025050001'||waktusaatini,errCode);
+--     else
+--         perform commit;
+--         perform call SPS_Ins_Loging(1,'INSPPI',0,'Success RPT_insaebln2025050001'||waktusaatini,errCode);
+--     end if;
+--
+--     perform call SPS_Ins_Loging(1,'INSPPI',0,'End Insert RPT_insaebln2025050001'||waktusaatini,'00000');
 
 end if;
 end;
