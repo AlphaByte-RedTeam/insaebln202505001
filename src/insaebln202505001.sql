@@ -362,31 +362,61 @@ if 1=1 then
     ) a
     ;
 
-    perform insert into prelistlt
-    select 2 inTipeOms,intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,
-    chkdemployee,chNamaEmp,chkdemployeepejabat kdEmpAAM,chNamaEmpPejabat nmEmpAAM,
-    chkdcustomer,chNamaCustomer,null chtipekp,chkp,inTahunMulaiTrx,inBulanMulaiTrx,
-    sum(deqtynetto/inkdkonvbesarid) deqtynetto1,sum(derpnetto) derpnetto,
-    case when inTahunMulaiTrx = inTahun and inBulanMulaiTrx = inBulan then 1 else 0 end loCustomerBaru
-    from (
-        select product_key,customer_key,deqtynetto,derpnetto,intahun,inbulan
-        from dm_tjual_mon
-        where intahun = vtahun and inbulan = vbulan
-    ) a
-    inner join (
-        select customer_key,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,
-        chkdcustomer,chNamaCustomer,chkdemployeepejabat,chNamaEmpPejabat,
-        year(datglmulaitransaksi::date) inTahunMulaiTrx,month(datglmulaitransaksi::date)inBulanMulaiTrx
-        from customer
-        where inkdwilayah in (select wil from wilayah)
-    ) b on a.customer_key = b.customer_key
-    left join (
-        select product_key,chkp,isnull(inkdkonvbesarid,0) inkdkonvbesarid
-        from produkPPI
-    ) c on a.product_key = c.product_key
-    group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,kdEmpAAM,nmEmpAAM,
-    chkdcustomer,chNamaCustomer,chkp,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
-    ;
+    if vdepolp in (0,1) then
+        perform insert into prelistlt
+        select 2 inTipeOms,intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,
+        chkdemployee,chNamaEmp,chkdemployeepejabat kdEmpAAM,chNamaEmpPejabat nmEmpAAM,
+        chkdcustomer,chNamaCustomer,null chtipekp,chkp,inTahunMulaiTrx,inBulanMulaiTrx,
+        sum(deqtynetto/inkdkonvbesarid) deqtynetto1,sum(derpnetto) derpnetto,
+        case when inTahunMulaiTrx = inTahun and inBulanMulaiTrx = inBulan then 1 else 0 end loCustomerBaru
+        from (
+            select product_key,customer_key,deqtynetto,derpnetto,intahun,inbulan
+            from dm_tjual_mon
+            where intahun = vtahun and inbulan = vbulan
+        ) a
+        inner join (
+            select customer_key,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,
+            chkdcustomer,chNamaCustomer,chkdemployeepejabat,chNamaEmpPejabat,
+            year(datglmulaitransaksi::date) inTahunMulaiTrx,month(datglmulaitransaksi::date)inBulanMulaiTrx
+            from customer
+            where inkdwilayah in (select wil from wilayah)
+        ) b on a.customer_key = b.customer_key
+        left join (
+            select product_key,chkp,isnull(inkdkonvbesarid,0) inkdkonvbesarid
+            from produkPPI
+        ) c on a.product_key = c.product_key
+        group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,kdEmpAAM,nmEmpAAM,
+        chkdcustomer,chNamaCustomer,chkp,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
+        ;
+    end if;
+
+    if vdepolp in (2) then
+        perform insert into prelistlt
+        select 2 inTipeOms,intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,
+        chkdemployee,chNamaEmp,chkdemployeepejabat kdEmpAAM,chNamaEmpPejabat nmEmpAAM,
+        chkdcustomer,chNamaCustomer,null chtipekp,chkp,inTahunMulaiTrx,inBulanMulaiTrx,
+        sum(deqtynetto/inkdkonvbesarid) deqtynetto1,sum(derpnetto) derpnetto,
+        case when inTahunMulaiTrx = inTahun and inBulanMulaiTrx = inBulan then 1 else 0 end loCustomerBaru
+        from (
+            select product_key,customer_key,deqtynetto,derpnetto,intahun,inbulan
+            from dm_tjual_aarta_mon
+            where intahun = vtahun and inbulan = vbulan
+        ) a
+        inner join (
+            select customer_key,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,
+            chkdcustomer,chNamaCustomer,chkdemployeepejabat,chNamaEmpPejabat,
+            year(datglmulaitransaksi::date) inTahunMulaiTrx,month(datglmulaitransaksi::date)inBulanMulaiTrx
+            from customer
+            where inkdwilayah in (select wil from wilayah)
+        ) b on a.customer_key = b.customer_key
+        left join (
+            select product_key,chkp,isnull(inkdkonvbesarid,0) inkdkonvbesarid
+            from produkPPI
+        ) c on a.product_key = c.product_key
+        group by intahun,inbulan,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chNamaEmp,kdEmpAAM,nmEmpAAM,
+        chkdcustomer,chNamaCustomer,chkp,inTahunMulaiTrx,inBulanMulaiTrx,loCustomerBaru
+        ;
+    end if;
 
     perform create local temporary table if not exists tempomsetkp
     (
@@ -602,6 +632,29 @@ if 1=1 then
     where inTipeOms in (2)
     group by inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,chkdcustomer,chnamacustomer,
     chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru
+    ;
+
+    -- TODO: Create table component LL for detail and incentives calculation
+    perform create local temporary table if not exists listLL
+    (
+        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
+        chkdemployeepejabat varchar(255),chnamaemployeepejabat varchar(255),chkdcustomer varchar(255),chnamacustomer varchar(255),
+        deQtyOmset dec(25,6),deRpOmset dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into listLL
+    select inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chNamaEmpPejabat,
+    chkdcustomer,chnamacustomer,isnull(deqtynetto,0),isnull(derpnetto,0)
+    from (
+        select customer_key,inkdwilayah,chkdemployee,chnamaemp,
+        chkdemployeepejabat,chNamaEmpPejabat,chkdcustomer,chnamacustomer
+        from customer
+    ) a
+    left join (
+        select customer_key,deqtynetto,derpnetto
+        from dm_tjual_mon
+        where intahun in (vtahun) and inbulan in (vbulan)
+    ) b on a.customer_key = b.customer_key
     ;
 
     perform create local temporary table if not exists insentiflt
