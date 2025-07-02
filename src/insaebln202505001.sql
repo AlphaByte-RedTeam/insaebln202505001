@@ -644,18 +644,35 @@ if 1=1 then
 
     perform insert into listLL
     select inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chNamaEmpPejabat,
-    chkdcustomer,chnamacustomer,isnull(deqtynetto,0),isnull(derpnetto,0)
+    chkdcustomer,chnamacustomer,sum(isnull(deqtynetto,0)),sum(isnull(derpnetto,0))
     from (
         select customer_key,inkdwilayah,chkdemployee,chnamaemp,
         chkdemployeepejabat,chNamaEmpPejabat,chkdcustomer,chnamacustomer
         from customer
     ) a
     left join (
-        select customer_key,deqtynetto,derpnetto
+        select customer_key,isnull(deqtynetto,0) deqtynetto,isnull(derpnetto,0) derpnetto
         from dm_tjual_mon
         where intahun in (vtahun) and inbulan in (vbulan)
     ) b on a.customer_key = b.customer_key
+    group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chNamaEmpPejabat,
+    chkdcustomer,chnamacustomer
     ;
+
+    perform create local temporary table if not exists preinsentifLL
+    (
+        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
+        chkdemployeepejabat varchar(255),chnamaemployeepejabat varchar(255),
+        inLL int,inLT int
+    ) on commit preserve rows;
+
+--     perform insert into preinsentifLL
+--     select inkdwilayah,chkdemployee,chnamaemployee,chkdemployeepejabat,chnamaemployeepejabat,
+--     count(distinct chkdcustomer) inLL
+--     from listll
+--     where chkdcustomer is not null
+--     group by inkdwilayah,chkdemployee,chnamaemployee,chkdemployeepejabat,chnamaemployeepejabat
+--     ;
 
     perform create local temporary table if not exists insentiflt
     (
@@ -849,6 +866,7 @@ if 1=1 then
         * 0: Omset KP + LT without target
         * 1: Omset KP only with Target
         * 2: Prestasi Tagih
+        * 3: List Pendukung Insentif LT RBM
     */
     perform insert into list_detail
     select nosurat,0 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
@@ -894,6 +912,32 @@ if 1=1 then
     null deQtyTarget,null deQtyOmset,detarget,dereal,
     vuser,waktusaatini,chNamaCustomer chketcustomer
     from piutangbulanan
+    ;
+
+    perform insert into list_detail
+    select nosurat,3 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
+    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+    chkdemployeeAAM chkdcustomer,null loCustomerBaru,chnamaempAAM chkp,null chnofaktur,null datgljt,
+    jlhLT deQtyOmset,totalIns deRpOmset,null deTarget,null deReal,
+    vuser,waktusaatini,null chketcustomer
+    from (
+        select inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,
+        sum(isnull(injumlahlt,0)) jlhLT,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+        (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
+        from (
+            select inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,
+            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+            (inlt50010 + inlt1050 + inlt50up) inJumlahLT
+            from listlt
+            group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM
+        ) a
+        group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM
+    ) a
     ;
 
     perform create local temporary table if not exists vinsrekap
