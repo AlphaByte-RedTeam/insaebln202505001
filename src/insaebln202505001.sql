@@ -92,6 +92,7 @@ if 1=1 then
     case
         when vtipeperiode in (2,3,4,8) then 120 * 0.8
         when vtipeperiode in (9,10,11) then 120
+        else 0
     end;
     stdInsNOC := 10;
 
@@ -405,7 +406,7 @@ if 1=1 then
         inner join (
             select customer_key,inkdwilayah,inkdcabang,inkddepo,chkdemployee,chnamaemp,
             chkdcustomer,chNamaCustomer,chkdemployeepejabat,chNamaEmpPejabat,
-            year(datglmulaitransaksi::date) inTahunMulaiTrx,month(datglmulaitransaksi::date)inBulanMulaiTrx
+            year(datglmulaitransaksi::date) inTahunMulaiTrx,month(datglmulaitransaksi::date) inBulanMulaiTrx
             from customer
             where inkdwilayah in (select wil from wilayah)
         ) b on a.customer_key = b.customer_key
@@ -474,60 +475,60 @@ if 1=1 then
 
             -- B2B DIVISION
             -- AE
-            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0015
-            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0060
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0015
 
             -- AAM
-            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
-            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0030
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
 
             -- RBM
-            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
-            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0008
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0012
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0008
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
 
             -- =======================================================================================
 
             -- SOBAT DIVISION -- TODO: Update tariffs incentive SOBAT DIVISION
             -- KOORD CAPTAIN
-            when vtipeperiode in (5) and isnull(percentQtyNetto1,0) < 0.90 then 0.0012
-            when vtipeperiode in (5) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
             when vtipeperiode in (5) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0060
+            when vtipeperiode in (5) and isnull(percentQtyNetto1,0) < 1.00 then 0.0035
+            when vtipeperiode in (5) and isnull(percentQtyNetto1,0) < 0.90 then 0.0012
 
             -- AREA KOORDINATOR CAPTAIN
-            when vtipeperiode in (6) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
-            when vtipeperiode in (6) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
             when vtipeperiode in (6) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0030
+            when vtipeperiode in (6) and isnull(percentQtyNetto1,0) < 1.00 then 0.0020
+            when vtipeperiode in (6) and isnull(percentQtyNetto1,0) < 0.90 then 0.0010
 
             -- SOBAT DEVELOPMENT MANAGER -- Tim CAPTAIN
-            when vtipeperiode in (7) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
-            when vtipeperiode in (7) and isnull(percentQtyNetto1,0) < 1.00 then 0.0007
             when vtipeperiode in (7) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0010
+            when vtipeperiode in (7) and isnull(percentQtyNetto1,0) < 1.00 then 0.0007
+            when vtipeperiode in (7) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
 
             -- =======================================================================================
 
             -- WATER DIVISION
             -- AAM ODS
-            when vtipeperiode in (8) and isnull(percentQtyNetto1,0) < 0.90 then 0.0008
-            when vtipeperiode in (8) and isnull(percentQtyNetto1,0) < 1.00 then 0.0015
             when vtipeperiode in (8) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0020
+            when vtipeperiode in (8) and isnull(percentQtyNetto1,0) < 1.00 then 0.0015
+            when vtipeperiode in (8) and isnull(percentQtyNetto1,0) < 0.90 then 0.0008
 
             -- SDM
-            when vtipeperiode in (9) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
-            when vtipeperiode in (9) and isnull(percentQtyNetto1,0) < 1.00 then 0.0006
             when vtipeperiode in (9) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0010
+            when vtipeperiode in (9) and isnull(percentQtyNetto1,0) < 1.00 then 0.0006
+            when vtipeperiode in (9) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
 
             -- AAM HDS
-            when vtipeperiode in (10) and isnull(percentQtyNetto1,0) < 0.90 then 0.0008
-            when vtipeperiode in (10) and isnull(percentQtyNetto1,0) < 1.00 then 0.0015
             when vtipeperiode in (10) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0020
+            when vtipeperiode in (10) and isnull(percentQtyNetto1,0) < 1.00 then 0.0015
+            when vtipeperiode in (10) and isnull(percentQtyNetto1,0) < 0.90 then 0.0008
 
             -- RBM
-            when vtipeperiode in (11) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
-            when vtipeperiode in (11) and isnull(percentQtyNetto1,0) < 1.00 then 0.0006
             when vtipeperiode in (11) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0010
+            when vtipeperiode in (11) and isnull(percentQtyNetto1,0) < 1.00 then 0.0006
+            when vtipeperiode in (11) and isnull(percentQtyNetto1,0) < 0.90 then 0.0004
 
             else 0
         end pctQtyNettoMultiplier
@@ -592,22 +593,22 @@ if 1=1 then
         sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
         case
             -- AE
-            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.80 then 0
-            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0007
-            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1 then 0.0015
             when vtipeperiode in (2) and isnull(percentQtyNetto1,0) >= 1 then 0.0030
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 1 then 0.0015
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.90 then 0.0007
+            when vtipeperiode in (2) and isnull(percentQtyNetto1,0) < 0.80 then 0
 
             -- AAM
-            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.80 then 0
-            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0005
-            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1 then 0.0010
             when vtipeperiode in (3) and isnull(percentQtyNetto1,0) >= 1 then 0.0015
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 1 then 0.0010
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.90 then 0.0005
+            when vtipeperiode in (3) and isnull(percentQtyNetto1,0) < 0.80 then 0
 
             -- RBM
-            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.80 then 0
-            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0002
-            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0004
             when vtipeperiode in (4) and isnull(percentQtyNetto1,0) >= 1.00 then 0.0006
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 1.00 then 0.0004
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.90 then 0.0002
+            when vtipeperiode in (4) and isnull(percentQtyNetto1,0) < 0.80 then 0
 
             else 0
         end pctQtyNettoMultiplier
@@ -634,84 +635,33 @@ if 1=1 then
     chkp,intahunmulaitrx,inbulanmulaitrx,locustomerbaru
     ;
 
-    -- TODO: Create table component LL for detail and incentives calculation
-    perform create local temporary table if not exists listLL
-    (
-        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
-        chkdemployeepejabat varchar(255),chnamaemployeepejabat varchar(255),chkdcustomer varchar(255),chnamacustomer varchar(255),
-        deQtyOmset dec(25,6),deRpOmset dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into listLL
-    select inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chNamaEmpPejabat,
-    chkdcustomer,chnamacustomer,sum(isnull(deqtynetto,0)),sum(isnull(derpnetto,0))
-    from (
-        select customer_key,inkdwilayah,chkdemployee,chnamaemp,
-        chkdemployeepejabat,chNamaEmpPejabat,chkdcustomer,chnamacustomer
-        from customer
-    ) a
-    left join (
-        select customer_key,isnull(deqtynetto,0) deqtynetto,isnull(derpnetto,0) derpnetto
-        from dm_tjual_mon
-        where intahun in (vtahun) and inbulan in (vbulan)
-    ) b on a.customer_key = b.customer_key
-    group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chNamaEmpPejabat,
-    chkdcustomer,chnamacustomer
-    ;
-
-    perform create local temporary table if not exists preinsentifLL
-    (
-        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
-        chkdemployeepejabat varchar(255),chnamaemployeepejabat varchar(255),
-        inLL int,inLT int
-    ) on commit preserve rows;
-
---     perform insert into preinsentifLL
---     select inkdwilayah,chkdemployee,chnamaemployee,chkdemployeepejabat,chnamaemployeepejabat,
---     count(distinct chkdcustomer) inLL
---     from listll
---     where chkdcustomer is not null
---     group by inkdwilayah,chkdemployee,chnamaemployee,chkdemployeepejabat,chnamaemployeepejabat
---     ;
-
     perform create local temporary table if not exists insentiflt
     (
-        inkdwilayah int,chkdemployee varchar(255),totalAAMIns int,
+        inkdwilayah int,chkdemployee varchar(255),chkdemployeeAAM varchar(255),
         deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalIns dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insentiflt
-    select inkdwilayah,chkdemployee,
-    count(distinct case when (totalIns > 0) then chkdemployeeAAM else null end) totalAAMIns,
-    sum(isnull(deTarifLt50010,0)) deTarifLt50010,sum(isnull(deTarifLt1050,0)) deTarifLt1050,sum(isnull(deTarifLt50up,0)) deTarifLt50up,
-    case
-        when vtipeperiode in (2,3,8) then sum(totalIns)
-        when vtipeperiode in (4)     then (250000.00 * totalAAMins)
-        else 0
-    end totalInsRBM
-    from(
+    select inkdwilayah,chkdemployee,chkdemployeeAAM,
+    sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+    sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+    sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+    (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
+    from (
         select inkdwilayah,chkdemployee,chkdemployeeAAM,
-        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
-        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
-        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
-        (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
-        from (
-            select inkdwilayah,chkdemployee,chkdemployeeAAM,
-            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
-            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
-            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
-            (inlt50010 + inlt1050 + inlt50up) inJumlahLT
-            from listlt
-            group by inkdwilayah,chkdemployee,chkdemployeeAAM
-        ) a
+        count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+        count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+        count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+        (inlt50010 + inlt1050 + inlt50up) inJumlahLT
+        from listlt
         group by inkdwilayah,chkdemployee,chkdemployeeAAM
     ) a
     where vtipeperiode in (2,3,4,8)
-    group by inkdwilayah,chkdemployee
+    group by inkdwilayah,chkdemployee,chkdemployeeAAM
     ;
 
     perform insert into insentiflt
-    select inkdwilayah,chkdemployee,null totalAAMIns,
+    select inkdwilayah,chkdemployee,null chkdemployeeAAM,
     null deTarifLt50010,null deTarifLt1050,null deTarifLt50up,
     sum(isnull(totalins,0)) totalInsSDMWater
     from (
@@ -757,63 +707,98 @@ if 1=1 then
     group by inkdwilayah,chkdemployee
     ;
 
+    perform create local temporary table if not exists insentifSDAktif
+    (
+        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
+        inTotalLb int,inTotalLL int,dePctJlhSDAktif dec(25,6),deTarifInsentifSDAktif dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insentifSDAktif
+    select a.inkdwilayah,a.chkdemployee,a.chnamaemp,
+    sum(isnull(inlb,0)) lb,sum(isnull(inll,0)) ll,
+    case when ll <= 0 then 0 else (lb/ll) end dePctJlhSDAktif,
+    case
+        when isnull(dePctJlhSDAktif,0) >= 0.90 and isnull(dePctJlhSDAktif,0) < 0.95 then 200000
+        when isnull(dePctJlhSDAktif,0) >= 0.95 then 300000
+        else 0
+    end deTarifInsentifSDAktif
+    from (
+        select inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat,
+        count(distinct chkdcustomer) inll,
+        count(distinct case when year(datglmulaitransaksi::date) = vtahun and month(datglmulaitransaksi::date) = vbulan then chkdcustomer end) inlb
+        from customer
+        group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat
+    ) a
+    group by a.inkdwilayah,a.chkdemployee,a.chnamaemp
+    ;
+
     -- Syarat Prestasi Tagih
     perform create local temporary table if not exists piutangbulanan
     (
         inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
+        chkdemployeebawahan varchar(255),chnamaempbawahan varchar(255),
         chkdcustomer varchar(255),chnamacustomer varchar(255),
         deNilaiFaktur dec(25,6),chnofaktur varchar(255),datgljt date,deTarget dec(25,6),deReal dec(25,6)
     ) on commit preserve rows;
 
     perform insert into piutangbulanan
-    select inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer,
+    select inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat,chkdcustomer,chnamacustomer,
     sum(isnull(deNilaiFaktur,0)) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
     sum(isnull(deTargetMonth,0)) deTarget,sum(isnull(deBayarMonth,0)) deReal
     from lp_tpiutang a
     inner join (
-        select customer_key,inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer from customer
+        select customer_key,inkdwilayah,chkdemployee,chkdemployeepejabat,chnamaemp,chnamaemppejabat,chkdcustomer,chnamacustomer
+        from customer
     ) b on a.customer_key = b.customer_key
     where datglcutoff = maxdate and a.customer_key in (select customer_key from customer)
-    group by inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,chnamacustomer,chnofaktur1,datgljt
+    group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat,chkdcustomer,chnamacustomer,chnofaktur1,datgljt
     ;
 
     perform create local temporary table if not exists hitungsyaratbayar
     (
-        inkdwilayah int,chkdemployee varchar(255),
-        deTarget dec(25,6),deReal dec(25,6),dePercentTagih dec(25,6)
+        inkdwilayah int,chkdemployee varchar(255),chkdemployeebawahan varchar(255),
+        deTarget dec(25,6),deReal dec(25,6)
     ) on commit preserve rows;
 
     perform insert into hitungsyaratbayar
-    select inkdwilayah,chkdemployee,
-    sum(deTarget) deTarget1,sum(deReal) deReal1,
-    case when isnull(deTarget1,0) <= 0 or isnull(deReal1,0) <= 0 then 0 else (deReal1 / deTarget1) end dePercentTagih
+    select inkdwilayah,chkdemployee,chkdemployeebawahan,
+    sum(deTarget) deTarget1,sum(deReal) deReal1
     from piutangbulanan
-    group by inkdwilayah,chkdemployee
+    group by inkdwilayah,chkdemployee,chkdemployeebawahan
     ;
 
     perform create local temporary table if not exists insentiffinal
     (
-        inkdwilayah int,chkdemployee varchar(255),multiplier dec(25,6),deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),
-        deInsKpBefore dec(25,6),deInsKpGlobalBefore dec(25,6),deInsLtBefore dec(25,6),deInsLbBefore dec(25,6),
-        deInsKpAfter dec(25,6),deInsKpGlobalAfter dec(25,6),deInsLtAfter dec(25,6),deInsLbAfter dec(25,6),
+        intipe int,inkdwilayah int,chkdemployee varchar(255),chkdemployeebawahan varchar(255),multiplier dec(25,6),deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),
+        deInsKpBefore dec(25,6),deInsKpGlobalBefore dec(25,6),deInsLtBefore dec(25,6),deInsLbBefore dec(25,6),deInsSDAktifBefore dec(25,6),
+        deInsKpAfter dec(25,6),deInsKpGlobalAfter dec(25,6),deInsLtAfter dec(25,6),deInsLbAfter dec(25,6),deInsSDAktifAfter dec(25,6),
         deTotalInsentif dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insentiffinal
-    select a.inkdwilayah,a.chkdemployee,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
-    isnull(deTarget,0) deTarget,isnull(deReal,0) deReal,isnull(pctTagih,0) pctTagih1,
+    select 1 intipe,a.inkdwilayah,a.chkdemployee,null chkdemployeebawahan,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
+    isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,
     isnull(inskp,0) insKpBefore,isnull(inskpglobal,0) insKpGlobalBefore,isnull(inslt,0) insLtBefore,isnull(inslb,0) insLbBefore,
-    pctTagihMultiplier1 * isnull(inskp,0)          calcInsKp,
-    pctTagihMultiplier1 * isnull(inskpglobal,0)    calcInsKpGlobal,
-    pctTagihMultiplier1 * isnull(inslt,0)          calcInsLt,
-    pctTagihMultiplier1 * isnull(inslb,0)          calcInsLb,
-    (calcInsKp + calcInsKpGlobal + calcInsLt + calcInsLb) deTotalInsFinal
+    isnull(insSDAktif,0) insSDAktifBefore,
+    pctTagihMultiplier1 * insKpBefore          calcInsKp,
+    pctTagihMultiplier1 * insKpGlobalBefore    calcInsKpGlobal,
+    pctTagihMultiplier1 * insLtBefore          calcInsLt,
+    pctTagihMultiplier1 * insLbBefore          calcInsLb,
+    pctTagihMultiplier1 * insSDAktifBefore     calcInsSDAktif,
+    (calcInsKp + calcInsKpGlobal + calcInsLt + calcInsLb + calcInsSDAktif) deTotalInsFinal
     from (
         select a.inkdwilayah,a.chkdemployee,
         sum(isnull(totalInsKp,0)) inskp,
         sum(isnull(totalInsKpGlobal,0)) inskpglobal,
-        sum(isnull(totalInsLT,0)) inslt,
-        sum(isnull(totalInsLB,0)) inslb
+        case
+            when vtipeperiode in (2,3,8) then sum(isnull(totalInsLT,0))
+            else 0
+        end inslt,
+        sum(isnull(totalInsLB,0)) inslb,
+        case
+            when vtipeperiode in (10) then sum(isnull(totalInsSDAktif,0))
+            else 0
+        end insSDAktif
         from (
             select distinct inkdwilayah,chkdemployee
             from customer
@@ -834,21 +819,103 @@ if 1=1 then
             select inkdwilayah,chkdemployee,sum(isnull(totalInsLB,0)) totalInsLB from insentifLB
             group by inkdwilayah,chkdemployee
         ) e on a.inkdwilayah = e.inkdwilayah and a.chkdemployee = e.chkdemployee
+        left join (
+            select inkdwilayah,chkdemployee,sum(isnull(deTarifInsentifSDAktif,0)) totalInsSDAktif from insentifSDAktif
+            group by inkdwilayah,chkdemployee
+        ) f on a.inkdwilayah = f.inkdwilayah and a.chkdemployee = f.chkdemployee
         group by a.inkdwilayah,a.chkdemployee
     ) a
     left join (
-        select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget,sum(isnull(dereal,0)) dereal,
-        sum(isnull(dePercentTagih,0)) pctTagih,
+        select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+        (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
         case
-            when vtipeperiode in (2,3,4) and pctTagih <  0.80 then 0
-            when vtipeperiode in (2,3,4) and pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
-            when vtipeperiode in (2,3,4) and pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
-            when vtipeperiode in (2,3,4) and pctTagih >= 0.95 then 1.00
+            when pctTagih <  0.80 then 0
+            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when pctTagih >= 0.95 then 1.00
             else 0
         end pctTagihMultiplier
         from hitungsyaratbayar
         group by inkdwilayah,chkdemployee
     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+    ;
+
+    perform insert into insentiffinal
+    select 2 intipe,a.inkdwilayah,a.chkdemployee,chkdemployeepejabat chkdemployeebawahan,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
+    isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,
+    null insKpBefore,null insKpGlobalBefore,isnull(inslt,0) insLtBefore,null insLbBefore,
+    null insSDAktifBefore,null calcInsKp,null calcInsKpGlobal,
+    (pctTagihMultiplier1 * insLtBefore) calcInsLt,
+    null calcInsLb,null calcInsSDAktif,
+    (calcInsLt) deTotalInsFinal
+    from (
+        select a.inkdwilayah,a.chkdemployee,chkdemployeepejabat,
+        sum(isnull(totalInsLT,0)) inslt
+        from (
+            select distinct inkdwilayah,chkdemployee,chkdemployeepejabat
+            from customer
+        ) a
+        left join (
+            select inkdwilayah,chkdemployee,chkdemployeeAAM,sum(isnull(totalIns,0)) totalInsLT from insentifLT
+            group by inkdwilayah,chkdemployee,chkdemployeeAAM
+        ) d on a.inkdwilayah = d.inkdwilayah and a.chkdemployee = d.chkdemployee
+        group by a.inkdwilayah,a.chkdemployee,chkdemployeepejabat
+    ) a
+    left join (
+        select inkdwilayah,chkdemployee,chkdemployeebawahan,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+        (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
+        case
+            when pctTagih <  0.80 then 0
+            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when pctTagih >= 0.95 then 1.00
+            else 0
+        end pctTagihMultiplier
+        from hitungsyaratbayar
+        group by inkdwilayah,chkdemployee,chkdemployeebawahan
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployeepejabat = b.chkdemployeebawahan
+    where vtipeperiode in (4)
+    ;
+
+    /*
+        * INSENTIF LT RBM
+        -- Bergantung pada AAM
+        -- Perhitungan LT RBM mengambil LT AAM setelah dihitung prestasi tagih
+    */
+    perform create local temporary table if not exists insentifLTRBMfinal
+    (
+        inkdwilayah int,chkdemployee varchar(255),totalAAMIns int,
+        totalInsLTRBMBefore dec(25,6),totalInsLTRBMAfter dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into insentifLTRBMfinal
+    select inkdwilayah,chkdemployee,totalAAMIns,
+    (250000 * totalAAMIns) totalInsLTRBMBefore,
+    (totalInsLTRBMBefore * multiplier) totalInsLTRBMAfter
+    from (
+        select inkdwilayah,chkdemployee,
+        count(distinct case when isnull(deInsLTAfter,0) > 0 then chkdemployeebawahan end) totalAAMIns,
+        sum(deTarget) deTarget1,sum(deReal) deReal1,(deReal1/deTarget1) pctTagih,
+        case
+            when pctTagih < 0.80 then 0
+            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when pctTagih >= 0.95 then 1.00
+            else 0
+        end multiplier
+        from insentiffinal
+        where intipe in (2)
+        group by inkdwilayah,chkdemployee
+    ) a
+    where vtipeperiode in (4)
+    ;
+
+    perform update insentiffinal as a
+    set
+        deInsLTBefore = b.totalInsLTRBMBefore,
+        deInsLTAfter  = b.totalInsLTRBMAfter
+    from insentifLTRBMfinal as b
+    where a.intipe = 1 and a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
     perform create local temporary table if not exists list_detail
