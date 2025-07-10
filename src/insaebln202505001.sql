@@ -910,12 +910,13 @@ if 1=1 then
     where vtipeperiode in (4)
     ;
 
-    perform update insentiffinal as a
+    perform update insentiffinal a
     set
         deInsLTBefore = b.totalInsLTRBMBefore,
         deInsLTAfter  = b.totalInsLTRBMAfter
-    from insentifLTRBMfinal as b
-    where a.intipe = 1 and a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+    from insentifLTRBMfinal b
+    where a.intipe = 1 and vtipeperiode in (4) and
+    a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
     perform create local temporary table if not exists list_detail
