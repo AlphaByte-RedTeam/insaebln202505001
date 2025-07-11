@@ -810,54 +810,59 @@ if 1=1 then
         ;
     end if;
 
---     if vtipeperiode in (9) then
---         perform insert into insentiflt
---         select inkdwilayah,chkdemployee,null chkdemployeeAAM,
---         null deTarifLt50010,null deTarifLt1050,null deTarifLt50up,
---         sum(isnull(totalins,0)) totalInsSDMWater
---         from (
---             select inkdwilayah,chkdemployee,chkdemployeeAAM,
---             sum(case when isnull(pctLT,0) > 0.80 and isnull(pctLT,0) < 0.95 then 200000 else 0 end) deTarifLt8095,
---             sum(case when isnull(pctLT,0) >= 0.95 then 300000 else 0 end) deTarifLt95up,
---             (deTarifLt8095 + deTarifLt95up) totalIns
---             from (
---                 select inkdwilayah,chkdemployee,chkdemployeeAAM,
---                 count(distinct case when isnull(deRpOmset,0) > 0 then chkdcustomer end) inlt,
---                 (inlt / stdInsLT) pctLT
---                 from listlt
---                 group by inkdwilayah,chkdemployee,chkdemployeeAAM
---             ) a
---             group by inkdwilayah,chkdemployee,chkdemployeeAAM
---         ) a
---         left join (
---             select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
---             (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
---             case
---                 when pctTagih <  0.80 then 0
---                 when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
---                 when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
---                 when pctTagih >= 0.95 then 1.00
---                 else 0
---             end pctTagihMultiplier
---             from hitungsyaratbayar
---             group by inkdwilayah,chkdemployee
---         ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
---         group by inkdwilayah,chkdemployee
---         ;
---     end if;
+    if vtipeperiode in (9) then
+        perform insert into insentiflt
+        select inkdwilayah,chkdemployee,null chkdemployeeAAM,
+        null deTarifLt50010,null deTarifLt1050,null deTarifLt50up,
+        sum(isnull(totalins,0)) totalInsSDMWater
+        from (
+            select inkdwilayah,chkdemployee,chkdemployeeAAM,
+            sum(case when isnull(pctLT,0) > 0.80 and isnull(pctLT,0) < 0.95 then 200000 else 0 end) deTarifLt8095,
+            sum(case when isnull(pctLT,0) >= 0.95 then 300000 else 0 end) deTarifLt95up,
+            (deTarifLt8095 + deTarifLt95up) totalIns
+            from (
+                select inkdwilayah,chkdemployee,chkdemployeeAAM,
+                count(distinct case when isnull(deRpOmset,0) > 0 then chkdcustomer end) inlt,
+                (inlt / stdInsLT) pctLT
+                from listlt
+                group by inkdwilayah,chkdemployee,chkdemployeeAAM
+            ) a
+            group by inkdwilayah,chkdemployee,chkdemployeeAAM
+        ) a
+        left join (
+            select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+            (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
+            case
+                when pctTagih <  0.80 then 0
+                when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+                when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+                when pctTagih >= 0.95 then 1.00
+                else 0
+            end pctTagihMultiplier
+            from hitungsyaratbayar
+            group by inkdwilayah,chkdemployee
+        ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+        group by inkdwilayah,chkdemployee
+        ;
+    end if;
 
     perform create local temporary table if not exists insentiflb
     (
         inkdwilayah int,chkdemployee varchar(255),
-        deTarifLB0106 dec(25,6),deTarifLB0610 dec(25,6),deTarifLB10up dec(25,6),totalInsLB dec(25,6)
+        deTarifLB0106 dec(25,6),deTarifLB0610 dec(25,6),deTarifLB10up dec(25,6),
+        deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),deTarifPrestag dec(25,6),
+        totalInsLBBefore dec(25,6),totalInsLBAfter dec(25,6)
+
     ) on commit preserve rows;
 
     perform insert into insentiflb
-    select inkdwilayah,chkdemployee,
-    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0106,0) * 10000::dec(25,6) else 0 end) deTarifLB0106,
-    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb0610,0) * 20000::dec(25,6) else 0 end) deTarifLB0610,
-    sum(case when vtipeperiode in (2,3) and isnull(inJumlahLB,0) >= stdInsNOC then isnull(inlb10up,0) * 50000::dec(25,6) else 0 end) deTarifLB10up,
-    (deTarifLB0106 + deTarifLB0610 + deTarifLB10up) totalInsLb
+    select a.inkdwilayah,a.chkdemployee,
+    case when isnull(inJumlahLB,0) >= 10 then isnull(inlb0106,0) * 10000::dec(25,6) else 0 end deTarifLB0106,
+    case when isnull(inJumlahLB,0) >= 10 then isnull(inlb0610,0) * 20000::dec(25,6) else 0 end deTarifLB0610,
+    case when isnull(inJumlahLB,0) >= 10 then isnull(inlb10up,0) * 50000::dec(25,6) else 0 end deTarifLB10up,
+    isnull(deTarget1,0) deTarget, isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
+    (deTarifLB0106 + deTarifLB0610 + deTarifLB10up) totalInsLBBefore,
+    (totalInsLBBefore * pctTagihMultiplier1) totalInsLBAfter
     from (
         select inkdwilayah,chkdemployee,
         count(distinct case when isnull(deRpOmset,0) >= 1000000 and isnull(derpomset,0) < 6000000  then chkdcustomer end) inlb0106,
@@ -868,7 +873,19 @@ if 1=1 then
         where loCustomerBaru = true
         group by inkdwilayah,chkdemployee
     ) a
-    group by inkdwilayah,chkdemployee
+    left join (
+        select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+        (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
+        case
+            when pctTagih <  0.80 then 0
+            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when pctTagih >= 0.95 then 1.00
+            else 0
+        end pctTagihMultiplier
+        from hitungsyaratbayar
+        group by inkdwilayah,chkdemployee
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
     perform create local temporary table if not exists insentifSDAktif
