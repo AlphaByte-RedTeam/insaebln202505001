@@ -495,14 +495,16 @@ if 1=1 then
     (
         inkdwilayah int,chketwilayah varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
         deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),deRateMultiplier dec(25,6),
+        deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),deTarifPrestag dec(25,6),
         totalInsKPBefore dec(25,6),totalInsKPAfter dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkp
     select a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemployee,chkp,
     isnull(deQtyTarget,0) deQtyTarget1,isnull(deQtyOmset,0) deQtyOmset1,isnull(deRpOmset,0) deRpOmset1,pctQtyNettoMultiplier,
+    isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
     (pctQtyNettoMultiplier * greatest(deRpOmset1,0)) totalInsKPBefore,
-    (totalInsKPBefore * pctTagihMultiplier) totalInsKPAfter
+    (totalInsKPBefore * pctTagihMultiplier1) totalInsKPAfter
     from (
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,
         sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
@@ -590,8 +592,7 @@ if 1=1 then
     perform create local temporary table if not exists tempomsetkpglobal
     (
         inkdwilayah int,chketwilayah varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),
-        chkp varchar(255),
-        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),
+        chkp varchar(255),deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),
         percentQtyNetto dec(25,6)
     ) on commit preserve rows;
 
@@ -631,13 +632,17 @@ if 1=1 then
     perform create local temporary table if not exists insomsetkpglobal
     (
         inkdwilayah int,chketwilayah varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
-        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),dePctQtyNettoMultiplier dec(25,6),totalInsBefore dec(25,6)
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),dePctQtyNettoMultiplier dec(25,6),
+        deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),deTarifPrestag dec(25,6),
+        totalInsKPGlobalBefore dec(25,6),totalInsKPGlobalAfter dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkpglobal
-    select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,
+    select a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemployee,chkp,
     isnull(deQtyTarget,0) deQtyTarget1,isnull(deQtyOmset,0) deQtyOmset1,isnull(deRpOmset,0) deRpOmset1,pctQtyNettoMultiplier,
-    pctQtyNettoMultiplier * deRpOmset1 totalInsBefore
+    isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
+    (pctQtyNettoMultiplier * deRpOmset1) totalInsKPGlobalBefore,
+    (totalInsKPGlobalBefore * pctTagihMultiplier1) totalInsKPGlobalAfter
     from (
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,
         sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
@@ -665,6 +670,19 @@ if 1=1 then
         from tempomsetkpglobal
         group by inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp
     ) a
+    left join (
+        select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+        (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
+        case
+            when pctTagih <  0.80 then 0
+            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when pctTagih >= 0.95 then 1.00
+            else 0
+        end pctTagihMultiplier
+        from hitungsyaratbayar
+        group by inkdwilayah,chkdemployee
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
     perform create local temporary table if not exists listlt
