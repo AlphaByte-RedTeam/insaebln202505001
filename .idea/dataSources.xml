@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="dbDWHBigData@10.1.4.56" uuid="609447a1-f720-4406-995f-177c421306ef">
+      <driver-ref>vertica</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.vertica.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:vertica://10.1.4.56:5433/dbDWHBigData</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <driver-properties>
+        <property name="multipleActiveResultSets" value="true" />
+      </driver-properties>
+    </data-source>
+  </component>
+</project>
