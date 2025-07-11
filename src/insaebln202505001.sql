@@ -321,6 +321,41 @@ if 1=1 then
     from temp_customer_tobe b where a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
+    -- Syarat Prestasi Tagih
+    perform create local temporary table if not exists prestasitagih
+    (
+        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
+        chkdemployeebawahan varchar(255),chnamaempbawahan varchar(255),
+        chkdcustomer varchar(255),chnamacustomer varchar(255),
+        deNilaiFaktur dec(25,6),chnofaktur varchar(255),datgljt date,deTarget dec(25,6),deReal dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into prestasitagih
+    select inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat,chkdcustomer,chnamacustomer,
+    sum(isnull(deNilaiFaktur,0)) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
+    sum(isnull(deTargetMonth,0)) deTarget,sum(isnull(deBayarMonth,0)) deReal
+    from lp_tpiutang a
+    inner join (
+        select customer_key,inkdwilayah,chkdemployee,chkdemployeepejabat,chnamaemp,chnamaemppejabat,chkdcustomer,chnamacustomer
+        from customer
+    ) b on a.customer_key = b.customer_key
+    where datglcutoff = maxdate and a.customer_key in (select customer_key from customer)
+    group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat,chkdcustomer,chnamacustomer,chnofaktur1,datgljt
+    ;
+
+    perform create local temporary table if not exists hitungsyaratbayar
+    (
+        inkdwilayah int,chkdemployee varchar(255),chkdemployeebawahan varchar(255),
+        deTarget dec(25,6),deReal dec(25,6)
+    ) on commit preserve rows;
+
+    perform insert into hitungsyaratbayar
+    select inkdwilayah,chkdemployee,chkdemployeebawahan,
+    sum(deTarget) deTarget1,sum(deReal) deReal1
+    from prestasitagih
+    group by inkdwilayah,chkdemployee,chkdemployeebawahan
+    ;
+
     /*
      ** Tipe Omset Classification (inTipeOms) **
      ** 0: target KP
@@ -459,13 +494,15 @@ if 1=1 then
     perform create local temporary table if not exists insomsetkp
     (
         inkdwilayah int,chketwilayah varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
-        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),deRateMultiplier dec(25,6),totalins dec(25,6)
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),deRateMultiplier dec(25,6),
+        totalInsKPBefore dec(25,6),totalInsKPAfter dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkp
-    select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,
+    select a.inkdwilayah,chketwilayah,a.chkdemployee,chnamaemployee,chkp,
     isnull(deQtyTarget,0) deQtyTarget1,isnull(deQtyOmset,0) deQtyOmset1,isnull(deRpOmset,0) deRpOmset1,pctQtyNettoMultiplier,
-    pctQtyNettoMultiplier * greatest(deRpOmset1,0) totalins
+    (pctQtyNettoMultiplier * greatest(deRpOmset1,0)) totalInsKPBefore,
+    (totalInsKPBefore * pctTagihMultiplier) totalInsKPAfter
     from (
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,
         sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
@@ -534,7 +571,20 @@ if 1=1 then
         end pctQtyNettoMultiplier
         from tempomsetkp
         group by inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp
-    ) b
+    ) a
+    left join (
+        select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+        (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
+        case
+            when pctTagih <  0.80 then 0
+            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+            when pctTagih >= 0.95 then 1.00
+            else 0
+        end pctTagihMultiplier
+        from hitungsyaratbayar
+        group by inkdwilayah,chkdemployee
+    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
     ;
 
     perform create local temporary table if not exists tempomsetkpglobal
@@ -581,13 +631,13 @@ if 1=1 then
     perform create local temporary table if not exists insomsetkpglobal
     (
         inkdwilayah int,chketwilayah varchar(255),chkdemployee varchar(255),chnamaemployee varchar(255),chkp varchar(255),
-        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),dePctQtyNettoMultiplier dec(25,6),totalins dec(25,6)
+        deQtyTarget dec(25,6),deQtyOmset dec(25,6),deRpOmset dec(25,6),dePctQtyNettoMultiplier dec(25,6),totalInsBefore dec(25,6)
     ) on commit preserve rows;
 
     perform insert into insomsetkpglobal
     select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,
     isnull(deQtyTarget,0) deQtyTarget1,isnull(deQtyOmset,0) deQtyOmset1,isnull(deRpOmset,0) deRpOmset1,pctQtyNettoMultiplier,
-    pctQtyNettoMultiplier * deRpOmset1 totalins
+    pctQtyNettoMultiplier * deRpOmset1 totalInsBefore
     from (
         select inkdwilayah,chketwilayah,chkdemployee,chnamaemployee,chkp,
         sum(deQtyTarget) deQtyTarget,sum(deQtyOmset) deQtyOmset,sum(deRpOmset) deRpOmset,sum(percentQtyNetto) percentQtyNetto1,
@@ -638,27 +688,29 @@ if 1=1 then
     perform create local temporary table if not exists insentiflt
     (
         inkdwilayah int,chkdemployee varchar(255),chkdemployeeAAM varchar(255),
-        deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalIns dec(25,6)
+        deTarifLt50010 dec(25,6),deTarifLt1050 dec(25,6),deTarifLt50up dec(25,6),totalInsBefore dec(25,6)
     ) on commit preserve rows;
 
-    perform insert into insentiflt
-    select inkdwilayah,chkdemployee,chkdemployeeAAM,
-    sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
-    sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
-    sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
-    (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
-    from (
+    if vtipeperiode in (2,3,8) then
+        perform insert into insentiflt
         select inkdwilayah,chkdemployee,chkdemployeeAAM,
-        count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
-        count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
-        count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
-        (inlt50010 + inlt1050 + inlt50up) inJumlahLT
-        from listlt
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+        (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalInsBefore
+        from (
+            select inkdwilayah,chkdemployee,chkdemployeeAAM,
+            count(distinct case when isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+            count(distinct case when isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+            count(distinct case when isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+            (inlt50010 + inlt1050 + inlt50up) inJumlahLT
+            from listlt
+            group by inkdwilayah,chkdemployee,chkdemployeeAAM
+        ) a
+        where vtipeperiode in (2,3,8)
         group by inkdwilayah,chkdemployee,chkdemployeeAAM
-    ) a
-    where vtipeperiode in (2,3,4,8)
-    group by inkdwilayah,chkdemployee,chkdemployeeAAM
-    ;
+        ;
+    end if;
 
     perform insert into insentiflt
     select inkdwilayah,chkdemployee,null chkdemployeeAAM,
@@ -732,404 +784,375 @@ if 1=1 then
     group by a.inkdwilayah,a.chkdemployee,a.chnamaemp
     ;
 
-    -- Syarat Prestasi Tagih
-    perform create local temporary table if not exists piutangbulanan
-    (
-        inkdwilayah int,chkdemployee varchar(255),chnamaemployee varchar(255),
-        chkdemployeebawahan varchar(255),chnamaempbawahan varchar(255),
-        chkdcustomer varchar(255),chnamacustomer varchar(255),
-        deNilaiFaktur dec(25,6),chnofaktur varchar(255),datgljt date,deTarget dec(25,6),deReal dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into piutangbulanan
-    select inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat,chkdcustomer,chnamacustomer,
-    sum(isnull(deNilaiFaktur,0)) deNilaiFaktur,left(chnofaktur,14) chnofaktur1,datgljt,
-    sum(isnull(deTargetMonth,0)) deTarget,sum(isnull(deBayarMonth,0)) deReal
-    from lp_tpiutang a
-    inner join (
-        select customer_key,inkdwilayah,chkdemployee,chkdemployeepejabat,chnamaemp,chnamaemppejabat,chkdcustomer,chnamacustomer
-        from customer
-    ) b on a.customer_key = b.customer_key
-    where datglcutoff = maxdate and a.customer_key in (select customer_key from customer)
-    group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeepejabat,chnamaemppejabat,chkdcustomer,chnamacustomer,chnofaktur1,datgljt
-    ;
-
-    perform create local temporary table if not exists hitungsyaratbayar
-    (
-        inkdwilayah int,chkdemployee varchar(255),chkdemployeebawahan varchar(255),
-        deTarget dec(25,6),deReal dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into hitungsyaratbayar
-    select inkdwilayah,chkdemployee,chkdemployeebawahan,
-    sum(deTarget) deTarget1,sum(deReal) deReal1
-    from piutangbulanan
-    group by inkdwilayah,chkdemployee,chkdemployeebawahan
-    ;
-
-    perform create local temporary table if not exists insentiffinal
-    (
-        intipe int,inkdwilayah int,chkdemployee varchar(255),chkdemployeebawahan varchar(255),multiplier dec(25,6),deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),
-        deInsKpBefore dec(25,6),deInsKpGlobalBefore dec(25,6),deInsLtBefore dec(25,6),deInsLbBefore dec(25,6),deInsSDAktifBefore dec(25,6),
-        deInsKpAfter dec(25,6),deInsKpGlobalAfter dec(25,6),deInsLtAfter dec(25,6),deInsLbAfter dec(25,6),deInsSDAktifAfter dec(25,6),
-        deTotalInsentif dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into insentiffinal
-    select 1 intipe,a.inkdwilayah,a.chkdemployee,null chkdemployeebawahan,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
-    isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,
-    isnull(inskp,0) insKpBefore,isnull(inskpglobal,0) insKpGlobalBefore,isnull(inslt,0) insLtBefore,isnull(inslb,0) insLbBefore,
-    isnull(insSDAktif,0) insSDAktifBefore,
-    pctTagihMultiplier1 * insKpBefore          calcInsKp,
-    pctTagihMultiplier1 * insKpGlobalBefore    calcInsKpGlobal,
-    pctTagihMultiplier1 * insLtBefore          calcInsLt,
-    pctTagihMultiplier1 * insLbBefore          calcInsLb,
-    pctTagihMultiplier1 * insSDAktifBefore     calcInsSDAktif,
-    (calcInsKp + calcInsKpGlobal + calcInsLt + calcInsLb + calcInsSDAktif) deTotalInsFinal
-    from (
-        select a.inkdwilayah,a.chkdemployee,
-        sum(isnull(totalInsKp,0)) inskp,
-        sum(isnull(totalInsKpGlobal,0)) inskpglobal,
-        case
-            when vtipeperiode in (2,3,8) then sum(isnull(totalInsLT,0))
-            else 0
-        end inslt,
-        sum(isnull(totalInsLB,0)) inslb,
-        case
-            when vtipeperiode in (10) then sum(isnull(totalInsSDAktif,0))
-            else 0
-        end insSDAktif
-        from (
-            select distinct inkdwilayah,chkdemployee
-            from customer
-        ) a
-        left join (
-            select inkdwilayah,chkdemployee,sum(isnull(totalins,0)) totalInsKp from insomsetkp
-            group by inkdwilayah,chkdemployee
-        ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-        left join (
-            select inkdwilayah,chkdemployee,sum(isnull(totalins,0)) totalInsKpGlobal from insomsetkpglobal
-            group by inkdwilayah,chkdemployee
-        ) c on a.inkdwilayah = c.inkdwilayah and a.chkdemployee = c.chkdemployee
-        left join (
-            select inkdwilayah,chkdemployee,sum(isnull(totalIns,0)) totalInsLT from insentifLT
-            group by inkdwilayah,chkdemployee
-        ) d on a.inkdwilayah = d.inkdwilayah and a.chkdemployee = d.chkdemployee
-        left join (
-            select inkdwilayah,chkdemployee,sum(isnull(totalInsLB,0)) totalInsLB from insentifLB
-            group by inkdwilayah,chkdemployee
-        ) e on a.inkdwilayah = e.inkdwilayah and a.chkdemployee = e.chkdemployee
-        left join (
-            select inkdwilayah,chkdemployee,sum(isnull(deTarifInsentifSDAktif,0)) totalInsSDAktif from insentifSDAktif
-            group by inkdwilayah,chkdemployee
-        ) f on a.inkdwilayah = f.inkdwilayah and a.chkdemployee = f.chkdemployee
-        group by a.inkdwilayah,a.chkdemployee
-    ) a
-    left join (
-        select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
-        (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
-        case
-            when pctTagih <  0.80 then 0
-            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
-            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
-            when pctTagih >= 0.95 then 1.00
-            else 0
-        end pctTagihMultiplier
-        from hitungsyaratbayar
-        group by inkdwilayah,chkdemployee
-    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-    ;
-
-    perform insert into insentiffinal
-    select 2 intipe,a.inkdwilayah,a.chkdemployee,chkdemployeepejabat chkdemployeebawahan,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
-    isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,
-    null insKpBefore,null insKpGlobalBefore,isnull(inslt,0) insLtBefore,null insLbBefore,
-    null insSDAktifBefore,null calcInsKp,null calcInsKpGlobal,
-    (pctTagihMultiplier1 * insLtBefore) calcInsLt,
-    null calcInsLb,null calcInsSDAktif,
-    (calcInsLt) deTotalInsFinal
-    from (
-        select a.inkdwilayah,a.chkdemployee,chkdemployeepejabat,
-        sum(isnull(totalInsLT,0)) inslt
-        from (
-            select distinct inkdwilayah,chkdemployee,chkdemployeepejabat
-            from customer
-        ) a
-        left join (
-            select inkdwilayah,chkdemployee,chkdemployeeAAM,sum(isnull(totalIns,0)) totalInsLT from insentifLT
-            group by inkdwilayah,chkdemployee,chkdemployeeAAM
-        ) d on a.inkdwilayah = d.inkdwilayah and a.chkdemployee = d.chkdemployee
-        group by a.inkdwilayah,a.chkdemployee,chkdemployeepejabat
-    ) a
-    left join (
-        select inkdwilayah,chkdemployee,chkdemployeebawahan,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
-        (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
-        case
-            when pctTagih <  0.80 then 0
-            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
-            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
-            when pctTagih >= 0.95 then 1.00
-            else 0
-        end pctTagihMultiplier
-        from hitungsyaratbayar
-        group by inkdwilayah,chkdemployee,chkdemployeebawahan
-    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployeepejabat = b.chkdemployeebawahan
-    where vtipeperiode in (4)
-    ;
-
-    /*
-        * INSENTIF LT RBM
-        -- Bergantung pada AAM
-        -- Perhitungan LT RBM mengambil LT AAM setelah dihitung prestasi tagih
-    */
-    perform create local temporary table if not exists insentifLTRBMfinal
-    (
-        inkdwilayah int,chkdemployee varchar(255),totalAAMIns int,
-        totalInsLTRBMBefore dec(25,6),totalInsLTRBMAfter dec(25,6)
-    ) on commit preserve rows;
-
-    perform insert into insentifLTRBMfinal
-    select inkdwilayah,chkdemployee,totalAAMIns,
-    (250000 * totalAAMIns) totalInsLTRBMBefore,
-    (totalInsLTRBMBefore * multiplier) totalInsLTRBMAfter
-    from (
-        select inkdwilayah,chkdemployee,
-        count(distinct case when isnull(deInsLTAfter,0) > 0 then chkdemployeebawahan end) totalAAMIns,
-        sum(deTarget) deTarget1,sum(deReal) deReal1,(deReal1/deTarget1) pctTagih,
-        case
-            when pctTagih < 0.80 then 0
-            when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
-            when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
-            when pctTagih >= 0.95 then 1.00
-            else 0
-        end multiplier
-        from insentiffinal
-        where intipe in (2)
-        group by inkdwilayah,chkdemployee
-    ) a
-    where vtipeperiode in (4)
-    ;
-
-    perform update insentiffinal a
-    set
-        deInsLTBefore = b.totalInsLTRBMBefore,
-        deInsLTAfter  = b.totalInsLTRBMAfter
-    from insentifLTRBMfinal b
-    where a.intipe = 1 and vtipeperiode in (4) and
-    a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-    ;
-
-    perform create local temporary table if not exists list_detail
-    (
-        chnosurat varchar(255),intipe int,intahun int,inbulan int,inperiode int,inpekan int,inkdwilayah int,inkdcabang int,
-        inkddepo int,chkdsite varchar(255),inkdtypeins int,chkettypeins varchar(255),chempid varchar(255),chketemp varchar(255),
-        chkdcustomer varchar(255),locustomerbaru boolean,chkp varchar(255),chnofaktur varchar(255),datgljt date,
-        deqtynetto dec(25,6),derpnetto dec(25,6),detarget dec(25,6),dereal dec(25,6),
-        chusercreated varchar(255),dacreated timestamp,chketcustomer varchar(255)
-    ) on commit preserve rows;
-    -- targetQTY,omsetQTY,omsetRP,null
-
-    /**
-        * tipe ins classification
-        * 0: Omset KP + LT without target
-        * 1: Omset KP only with Target
-        * 2: Prestasi Tagih
-        * 3: List Pendukung Insentif LT RBM
-    */
-    perform insert into list_detail
-    select nosurat,0 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
-    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
-    deQtyNetto deQtyOmset,deRpNetto deRpOmset,null deTarget,null deReal,
-    vuser,waktusaatini,chNamaCustomer chketcustomer
-    from (
-        select inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,locustomerbaru,
-        chkp,deQtyOmset deQtyNetto,deRpOmset deRpNetto,chnamacustomer
-        from listlt
-    ) a
-    ;
-
-    perform insert into list_detail
-    select nosurat,1 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
-    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
-    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,deRateMultiplier deReal,
-    vuser,waktusaatini,null chketcustomer
-    from insomsetkp a
-    inner join (
-        select distinct chnamaemp,chkdemployee from customer
-    ) b on a.chkdemployee = b.chkdemployee
-    ;
-
-    perform insert into list_detail
-    select nosurat,1 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
-    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
-    deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,dePctQtyNettoMultiplier deReal,
-    vuser,waktusaatini,null chketcustomer
-    from insomsetkpglobal a
-    inner join (
-        select distinct chnamaemp,chkdemployee from customer
-    ) b on a.chkdemployee = b.chkdemployee
-    ;
-
-    perform insert into list_detail
-    select nosurat,2 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,inkdwilayah,null inkdcabang,
-    null inkddepo,null chkdsite,vtipeperiode,vketemployee,chkdemployee chempid,chnamaemployee chketemp,
-    chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
-    null deQtyTarget,null deQtyOmset,detarget,dereal,
-    vuser,waktusaatini,chNamaCustomer chketcustomer
-    from piutangbulanan
-    ;
-
-    perform insert into list_detail
-    select nosurat,3 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
-    null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
-    chkdemployeeAAM chkdcustomer,null loCustomerBaru,chnamaempAAM chkp,null chnofaktur,null datgljt,
-    jlhLT deQtyOmset,totalIns deRpOmset,null deTarget,null deReal,
-    vuser,waktusaatini,null chketcustomer
-    from (
-        select inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,
-        sum(isnull(injumlahlt,0)) jlhLT,
-        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
-        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
-        sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
-        (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
-        from (
-            select inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,
-            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
-            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
-            count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
-            (inlt50010 + inlt1050 + inlt50up) inJumlahLT
-            from listlt
-            group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM
-        ) a
-        group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM
-    ) a
-    ;
-
-    perform create local temporary table if not exists vinsrekap
-    (
-        chkdsite varchar(255),inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),inkddepo int,chketdepo varchar(255),
-        inTahun int,inperiode int,inpekan int,inpekantahun int,inbulan int,inkdtypeins int,inkdins int,
-        chkdda varchar(255),chkdemployee varchar(255),chketda varchar(255),chketemployee varchar(255),
-        deinsentif dec(25,6),chnosurat varchar(255),locurrent int,inkdteamda int,chusercreated varchar(255),dacreated timestamp,intgl int,deinshangus dec(25,6)
-    ) on commit preserve rows;
-
-    -- original value
-    perform insert into vinsrekap
-    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
-    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
-    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
-    totalIns deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
-    null intgl,null deReal
-    from (
-        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
-        from customer
-    ) a
-    left join (
-        -- omset kp
-        select chkdemployee,inkdwilayah,
-        ('9'||vtipeperiode||600)::int inkdins,sum(isnull(deInsKpBefore,0)) totalIns
-        from insentiffinal
-        group by chkdemployee,inkdwilayah
-
-        union all
-
-        -- omset KP global
-        select chkdemployee,inkdwilayah,
-        ('9'||vtipeperiode||601)::int inkdins,sum(isnull(deInsKpGlobalBefore,0))
-        from insentiffinal
-        group by chkdemployee,inkdwilayah
-
-        union all
-
-        -- LT Omset
-        select chkdemployee,inkdwilayah,
-        ('9'||vtipeperiode||602)::int inkdins,sum(isnull(deInsLtBefore,0))
-        from insentiffinal
-        group by chkdemployee,inkdwilayah
-
-        union all
-
-        -- LB Omset
-        select chkdemployee,inkdwilayah,
-        ('9'||vtipeperiode||603)::int inkdins,sum(isnull(deInsLbBefore,0))
-        from insentiffinal
-        group by chkdemployee,inkdwilayah
-
-    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-    ;
-
-    -- original value prestasi tagih
-    perform insert into vinsrekap
-    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
-    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
-    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
-    deTarget deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
-    null intgl,deReal deInsHangus
-    from (
-        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
-        from customer
-    ) a
-    left join (
-        select chkdemployee,inkdwilayah,('9'||vtipeperiode||999)::int inkdins,
-        sum(isnull(deTarget,0)) deTarget,sum(isnull(deReal,0)) deReal
-        from insentiffinal
-        group by chkdemployee,inkdwilayah
-    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-    ;
-
-    -- calculated value
-    perform insert into vinsrekap
-    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
-    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
-    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
-    deInsFinal deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
-    null intgl,null deInsHangus
-    from (
-        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
-        from customer
-    ) a
-    left join (
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0) depcttagih,isnull(deinskpafter,0) deInsFinal,(vtipeperiode||600)::int inkdins
-        from insentiffinal
-
-        union all
-
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinskpglobalafter,0),(vtipeperiode||601)::int inkdins
-        from insentiffinal
-
-        union all
-
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinsltafter,0),(vtipeperiode||602)::int inkdins
-        from insentiffinal
-
-        union all
-
-        select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinslbafter,0),(vtipeperiode||603)::int inkdins
-        from insentiffinal
-
-    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-    ;
-
-    -- calculated value prestasi tagih
-    perform insert into vinsrekap
-    select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
-    vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
-    null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
-    dePctTagih deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
-    null intgl,multiplier deInsHangus
-    from (
-        select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
-        from customer
-    ) a
-    left join (
-        select inkdwilayah,chkdemployee,isnull(multiplier,0) multiplier,isnull(dePctTagih,0) depcttagih,(vtipeperiode||999)::int inkdins
-        from insentiffinal
-    ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
-    ;
-
+--     perform create local temporary table if not exists insentiffinal
+--     (
+--         intipe int,inkdwilayah int,chkdemployee varchar(255),chkdemployeebawahan varchar(255),multiplier dec(25,6),deTarget dec(25,6),deReal dec(25,6),dePctTagih dec(25,6),
+--         deInsKpBefore dec(25,6),deInsKpGlobalBefore dec(25,6),deInsLtBefore dec(25,6),deInsLbBefore dec(25,6),deInsSDAktifBefore dec(25,6),
+--         deInsKpAfter dec(25,6),deInsKpGlobalAfter dec(25,6),deInsLtAfter dec(25,6),deInsLbAfter dec(25,6),deInsSDAktifAfter dec(25,6),
+--         deTotalInsentif dec(25,6)
+--     ) on commit preserve rows;
+--
+--     perform insert into insentiffinal
+--     select 1 intipe,a.inkdwilayah,a.chkdemployee,null chkdemployeebawahan,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
+--     isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,
+--     isnull(inskp,0) insKpBefore,isnull(inskpglobal,0) insKpGlobalBefore,isnull(inslt,0) insLtBefore,isnull(inslb,0) insLbBefore,
+--     isnull(insSDAktif,0) insSDAktifBefore,
+--     pctTagihMultiplier1 * insKpBefore          calcInsKp,
+--     pctTagihMultiplier1 * insKpGlobalBefore    calcInsKpGlobal,
+--     pctTagihMultiplier1 * insLtBefore          calcInsLt,
+--     pctTagihMultiplier1 * insLbBefore          calcInsLb,
+--     pctTagihMultiplier1 * insSDAktifBefore     calcInsSDAktif,
+--     (calcInsKp + calcInsKpGlobal + calcInsLt + calcInsLb + calcInsSDAktif) deTotalInsFinal
+--     from (
+--         select a.inkdwilayah,a.chkdemployee,
+--         sum(isnull(totalInsKp,0)) inskp,
+--         sum(isnull(totalInsKpGlobal,0)) inskpglobal,
+--         case
+--             when vtipeperiode in (2,3,8) then sum(isnull(totalInsLT,0))
+--             else 0
+--         end inslt,
+--         sum(isnull(totalInsLB,0)) inslb,
+--         case
+--             when vtipeperiode in (10) then sum(isnull(totalInsSDAktif,0))
+--             else 0
+--         end insSDAktif
+--         from (
+--             select distinct inkdwilayah,chkdemployee
+--             from customer
+--         ) a
+--         left join (
+--             select inkdwilayah,chkdemployee,sum(isnull(totalInsBefore,0)) totalInsKp from insomsetkp
+--             group by inkdwilayah,chkdemployee
+--         ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+--         left join (
+--             select inkdwilayah,chkdemployee,sum(isnull(totalInsBefore,0)) totalInsKpGlobal from insomsetkpglobal
+--             group by inkdwilayah,chkdemployee
+--         ) c on a.inkdwilayah = c.inkdwilayah and a.chkdemployee = c.chkdemployee
+--         left join (
+--             select inkdwilayah,chkdemployee,sum(isnull(totalInsBefore,0)) totalInsLT from insentifLT
+--             group by inkdwilayah,chkdemployee
+--         ) d on a.inkdwilayah = d.inkdwilayah and a.chkdemployee = d.chkdemployee
+--         left join (
+--             select inkdwilayah,chkdemployee,sum(isnull(totalInsLB,0)) totalInsLB from insentifLB
+--             group by inkdwilayah,chkdemployee
+--         ) e on a.inkdwilayah = e.inkdwilayah and a.chkdemployee = e.chkdemployee
+--         left join (
+--             select inkdwilayah,chkdemployee,sum(isnull(deTarifInsentifSDAktif,0)) totalInsSDAktif from insentifSDAktif
+--             group by inkdwilayah,chkdemployee
+--         ) f on a.inkdwilayah = f.inkdwilayah and a.chkdemployee = f.chkdemployee
+--         group by a.inkdwilayah,a.chkdemployee
+--     ) a
+--     left join (
+--         select inkdwilayah,chkdemployee,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+--         (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
+--         case
+--             when pctTagih <  0.80 then 0
+--             when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+--             when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+--             when pctTagih >= 0.95 then 1.00
+--             else 0
+--         end pctTagihMultiplier
+--         from hitungsyaratbayar
+--         group by inkdwilayah,chkdemployee
+--     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+--     ;
+--
+--     perform insert into insentiffinal
+--     select 2 intipe,a.inkdwilayah,a.chkdemployee,chkdemployeepejabat chkdemployeebawahan,isnull(pctTagihMultiplier,0) pctTagihMultiplier1,
+--     isnull(deTarget1,0) deTarget,isnull(deReal1,0) deReal,isnull(pctTagih,0) pctTagih1,
+--     null insKpBefore,null insKpGlobalBefore,isnull(inslt,0) insLtBefore,null insLbBefore,
+--     null insSDAktifBefore,null calcInsKp,null calcInsKpGlobal,
+--     (pctTagihMultiplier1 * insLtBefore) calcInsLt,
+--     null calcInsLb,null calcInsSDAktif,
+--     (calcInsLt) deTotalInsFinal
+--     from (
+--         select a.inkdwilayah,a.chkdemployee,chkdemployeepejabat,
+--         sum(isnull(totalInsLT,0)) inslt
+--         from (
+--             select distinct inkdwilayah,chkdemployee,chkdemployeepejabat
+--             from customer
+--         ) a
+--         left join (
+--             select inkdwilayah,chkdemployee,chkdemployeeAAM,sum(isnull(totalInsBefore,0)) totalInsLT from insentifLT
+--             group by inkdwilayah,chkdemployee,chkdemployeeAAM
+--         ) d on a.inkdwilayah = d.inkdwilayah and a.chkdemployee = d.chkdemployee
+--         group by a.inkdwilayah,a.chkdemployee,chkdemployeepejabat
+--     ) a
+--     left join (
+--         select inkdwilayah,chkdemployee,chkdemployeebawahan,sum(isnull(deTarget,0)) detarget1,sum(isnull(dereal,0)) dereal1,
+--         (case when (deTarget1 <= 0) or (deReal1 <= 0) then 0 else deReal1/deTarget1 end) pctTagih,
+--         case
+--             when pctTagih <  0.80 then 0
+--             when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+--             when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+--             when pctTagih >= 0.95 then 1.00
+--             else 0
+--         end pctTagihMultiplier
+--         from hitungsyaratbayar
+--         group by inkdwilayah,chkdemployee,chkdemployeebawahan
+--     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployeepejabat = b.chkdemployeebawahan
+--     where vtipeperiode in (4)
+--     ;
+--
+--     /*
+--         * INSENTIF LT RBM
+--         -- Bergantung pada AAM
+--         -- Perhitungan LT RBM mengambil LT AAM setelah dihitung prestasi tagih
+--     */
+--     perform create local temporary table if not exists insentifLTRBMfinal
+--     (
+--         inkdwilayah int,chkdemployee varchar(255),totalAAMIns int,
+--         totalInsLTRBMBefore dec(25,6),totalInsLTRBMAfter dec(25,6)
+--     ) on commit preserve rows;
+--
+--     perform insert into insentifLTRBMfinal
+--     select inkdwilayah,chkdemployee,totalAAMIns,
+--     (250000 * totalAAMIns) totalInsLTRBMBefore,
+--     (totalInsLTRBMBefore * multiplier) totalInsLTRBMAfter
+--     from (
+--         select inkdwilayah,chkdemployee,
+--         count(distinct case when isnull(deInsLTAfter,0) > 0 then chkdemployeebawahan end) totalAAMIns,
+--         sum(deTarget) deTarget1,sum(deReal) deReal1,(deReal1/deTarget1) pctTagih,
+--         case
+--             when pctTagih < 0.80 then 0
+--             when pctTagih >= 0.80 and pctTagih < 0.90 then 0.80
+--             when pctTagih >= 0.90 and pctTagih < 0.95 then 0.90
+--             when pctTagih >= 0.95 then 1.00
+--             else 0
+--         end multiplier
+--         from insentiffinal
+--         where intipe in (2)
+--         group by inkdwilayah,chkdemployee
+--     ) a
+--     where vtipeperiode in (4)
+--     ;
+--
+--     perform update insentiffinal a
+--     set
+--         deInsLTBefore = b.totalInsLTRBMBefore,
+--         deInsLTAfter  = b.totalInsLTRBMAfter
+--     from insentifLTRBMfinal b
+--     where a.intipe = 1 and vtipeperiode in (4) and
+--     a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+--     ;
+--
+--     perform create local temporary table if not exists list_detail
+--     (
+--         chnosurat varchar(255),intipe int,intahun int,inbulan int,inperiode int,inpekan int,inkdwilayah int,inkdcabang int,
+--         inkddepo int,chkdsite varchar(255),inkdtypeins int,chkettypeins varchar(255),chempid varchar(255),chketemp varchar(255),
+--         chkdcustomer varchar(255),locustomerbaru boolean,chkp varchar(255),chnofaktur varchar(255),datgljt date,
+--         deqtynetto dec(25,6),derpnetto dec(25,6),detarget dec(25,6),dereal dec(25,6),
+--         chusercreated varchar(255),dacreated timestamp,chketcustomer varchar(255)
+--     ) on commit preserve rows;
+--     -- targetQTY,omsetQTY,omsetRP,null
+--
+--     /**
+--         * tipe ins classification
+--         * 0: Omset KP + LT without target
+--         * 1: Omset KP only with Target
+--         * 2: Prestasi Tagih
+--         * 3: List Pendukung Insentif LT RBM
+--     */
+--     perform insert into list_detail
+--     select nosurat,0 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
+--     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+--     chkdcustomer,loCustomerBaru,a.chkp,null chnofaktur,null datgljt,
+--     deQtyNetto deQtyOmset,deRpNetto deRpOmset,null deTarget,null deReal,
+--     vuser,waktusaatini,chNamaCustomer chketcustomer
+--     from (
+--         select inkdwilayah,chkdemployee,chnamaemp,chkdcustomer,locustomerbaru,
+--         chkp,deQtyOmset deQtyNetto,deRpOmset deRpNetto,chnamacustomer
+--         from listlt
+--     ) a
+--     ;
+--
+--     perform insert into list_detail
+--     select nosurat,1 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
+--     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+--     null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
+--     deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,deRateMultiplier deReal,
+--     vuser,waktusaatini,null chketcustomer
+--     from insomsetkp a
+--     inner join (
+--         select distinct chnamaemp,chkdemployee from customer
+--     ) b on a.chkdemployee = b.chkdemployee
+--     ;
+--
+--     perform insert into list_detail
+--     select nosurat,1 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
+--     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+--     null chkdcustomer,null loCustomerBaru,chkp,null chnofaktur,null datgljt,
+--     deqtytarget deTargetQty,deqtyomset deQtyNetto,derpomset deRpNetto,dePctQtyNettoMultiplier deReal,
+--     vuser,waktusaatini,null chketcustomer
+--     from insomsetkpglobal a
+--     inner join (
+--         select distinct chnamaemp,chkdemployee from customer
+--     ) b on a.chkdemployee = b.chkdemployee
+--     ;
+--
+--     perform insert into list_detail
+--     select nosurat,2 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,inkdwilayah,null inkdcabang,
+--     null inkddepo,null chkdsite,vtipeperiode,vketemployee,chkdemployee chempid,chnamaemployee chketemp,
+--     chkdcustomer,null loCustomerBaru,null chkp,chnofaktur,datgljt,
+--     null deQtyTarget,null deQtyOmset,detarget,dereal,
+--     vuser,waktusaatini,chNamaCustomer chketcustomer
+--     from prestasitagih
+--     ;
+--
+--     /*
+--         * LIST CA
+--         -- untuk menampilkan informasi AAM yang mendapat
+--         -- insentif pada perhitungan insentif LT RBM
+--     */
+--     -- TODO: Update list_detail tipe 3
+--     perform insert into list_detail
+--     select nosurat,3 detailTipeIns,vtahun,vbulan,3 bulanan,0 inpekan,a.inkdwilayah,null inkdcabang,
+--     null inkddepo,null chkdsite,vtipeperiode,vketemployee,a.chkdemployee chempid,chnamaemp chketemp,
+--     chkdemployeeAAM chkdcustomer,null loCustomerBaru,chnamaempAAM chkp,null chnofaktur,null datgljt,
+--     jlhLT deQtyOmset,totalIns deRpOmset,null deTarget,null deReal,
+--     vuser,waktusaatini,null chketcustomer
+--     from (
+--         select inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,
+--         sum(isnull(injumlahlt,0)) jlhLT,
+--         sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50010,0) * 2500::dec(25,6) else 0 end) deTarifLt50010,
+--         sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt1050,0) * 10000::dec(25,6) else 0 end) deTarifLt1050,
+--         sum(case when isnull(inJumlahLt,0) >= stdInsLT then isnull(inlt50up,0) * 20000::dec(25,6) else 0 end) deTarifLt50up,
+--         (deTarifLt50010 + deTarifLt1050 + deTarifLt50up) totalIns
+--         from (
+--             select inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM,
+--             count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 500000 and isnull(derpomset,0) < 10000000  then chkdcustomer end) inlt50010,
+--             count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >= 10000000 and isnull(derpomset,0) <= 50000000 then chkdcustomer end) inlt1050,
+--             count(distinct case when vtipeperiode in (2,3,4,8) and isnull(deRpOmset,0) >  50000000 then chkdcustomer end) inlt50up,
+--             (inlt50010 + inlt1050 + inlt50up) inJumlahLT
+--             from listlt
+--             group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM
+--         ) a
+--         group by inkdwilayah,chkdemployee,chnamaemp,chkdemployeeAAM,chnamaempAAM
+--     ) a
+--     ;
+--
+--     perform create local temporary table if not exists vinsrekap
+--     (
+--         chkdsite varchar(255),inkdwilayah int,chketwilayah varchar(255),inkdcabang int,chketcabang varchar(255),inkddepo int,chketdepo varchar(255),
+--         inTahun int,inperiode int,inpekan int,inpekantahun int,inbulan int,inkdtypeins int,inkdins int,
+--         chkdda varchar(255),chkdemployee varchar(255),chketda varchar(255),chketemployee varchar(255),
+--         deinsentif dec(25,6),chnosurat varchar(255),locurrent int,inkdteamda int,chusercreated varchar(255),dacreated timestamp,intgl int,deinshangus dec(25,6)
+--     ) on commit preserve rows;
+--
+--     -- original value
+--     perform insert into vinsrekap
+--     select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+--     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
+--     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+--     totalIns deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
+--     null intgl,null deReal
+--     from (
+--         select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
+--         from customer
+--     ) a
+--     left join (
+--         -- omset kp
+--         select chkdemployee,inkdwilayah,
+--         ('9'||vtipeperiode||600)::int inkdins,sum(isnull(deInsKpBefore,0)) totalIns
+--         from insentiffinal
+--         group by chkdemployee,inkdwilayah
+--
+--         union all
+--
+--         -- omset KP global
+--         select chkdemployee,inkdwilayah,
+--         ('9'||vtipeperiode||601)::int inkdins,sum(isnull(deInsKpGlobalBefore,0))
+--         from insentiffinal
+--         group by chkdemployee,inkdwilayah
+--
+--         union all
+--
+--         -- LT Omset
+--         select chkdemployee,inkdwilayah,
+--         ('9'||vtipeperiode||602)::int inkdins,sum(isnull(deInsLtBefore,0))
+--         from insentiffinal
+--         group by chkdemployee,inkdwilayah
+--
+--         union all
+--
+--         -- LB Omset
+--         select chkdemployee,inkdwilayah,
+--         ('9'||vtipeperiode||603)::int inkdins,sum(isnull(deInsLbBefore,0))
+--         from insentiffinal
+--         group by chkdemployee,inkdwilayah
+--
+--     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+--     ;
+--
+--     -- original value prestasi tagih
+--     perform insert into vinsrekap
+--     select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+--     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
+--     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+--     deTarget deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
+--     null intgl,deReal deInsHangus
+--     from (
+--         select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
+--         from customer
+--     ) a
+--     left join (
+--         select chkdemployee,inkdwilayah,('9'||vtipeperiode||999)::int inkdins,
+--         sum(isnull(deTarget,0)) deTarget,sum(isnull(deReal,0)) deReal
+--         from insentiffinal
+--         group by chkdemployee,inkdwilayah
+--     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+--     ;
+--
+--     -- calculated value
+--     perform insert into vinsrekap
+--     select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+--     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
+--     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+--     deInsFinal deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
+--     null intgl,null deInsHangus
+--     from (
+--         select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
+--         from customer
+--     ) a
+--     left join (
+--         select inkdwilayah,chkdemployee,isnull(depcttagih,0) depcttagih,isnull(deinskpafter,0) deInsFinal,(vtipeperiode||600)::int inkdins
+--         from insentiffinal
+--
+--         union all
+--
+--         select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinskpglobalafter,0),(vtipeperiode||601)::int inkdins
+--         from insentiffinal
+--
+--         union all
+--
+--         select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinsltafter,0),(vtipeperiode||602)::int inkdins
+--         from insentiffinal
+--
+--         union all
+--
+--         select inkdwilayah,chkdemployee,isnull(depcttagih,0),isnull(deinslbafter,0),(vtipeperiode||603)::int inkdins
+--         from insentiffinal
+--
+--     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+--     ;
+--
+--     -- calculated value prestasi tagih
+--     perform insert into vinsrekap
+--     select null chkdsite,a.inkdwilayah,a.chketwilayah,null inkdcabang,null chketcabang,null inkddepo,null chketdepo,
+--     vtahun inTahun,3 periodeBulanan,0 inpekan,0 inpekantahun,vbulan inbulan,vtipeperiode inkdtypeinsemployee,inkdins,
+--     null chkdda,a.chkdemployee,a.chnamaemployee chketda,a.chnamaemployee chketemployee,
+--     dePctTagih deInsentif,nosurat chnosurat,vposisi loCurrent,0 inkdteamda,vuser chUserCreated,waktusaatini daCreated,
+--     null intgl,multiplier deInsHangus
+--     from (
+--         select distinct inkdwilayah,chketwilayah,chkdemployee,chnamaemp chnamaemployee
+--         from customer
+--     ) a
+--     left join (
+--         select inkdwilayah,chkdemployee,isnull(multiplier,0) multiplier,isnull(dePctTagih,0) depcttagih,(vtipeperiode||999)::int inkdins
+--         from insentiffinal
+--     ) b on a.inkdwilayah = b.inkdwilayah and a.chkdemployee = b.chkdemployee
+--     ;
+--
 --     perform call SPS_Ins_Loging(1,'INSPPI',0,'Start Insert RPT_insaebln202505001 '||waktusaatini,'00000');
 --
 --     begin
